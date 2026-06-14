@@ -1,0 +1,301 @@
+/* ============================================================
+   Game Board — pannable card area with parchment texture
+   ============================================================ */
+
+#game-board {
+  position: absolute;
+  top: var(--toolbar-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+
+  /* Warm dark brown base */
+  background-color: #3a3228;
+
+  /*
+   * Layered parchment texture using CSS gradients.
+   * Layers stack bottom-to-top in declaration order.
+   */
+  background-image:
+    /* Layer 1 — large organic color variation (warm spots) */
+    radial-gradient(
+      ellipse at 18% 22%,
+      rgba(180, 150, 105, 0.25) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 82% 15%,
+      rgba(160, 130, 85, 0.18) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 75% 78%,
+      rgba(170, 140, 90, 0.2) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 12% 72%,
+      rgba(150, 120, 80, 0.15) 0%,
+      transparent 45%
+    ),
+
+    /* Layer 2 — darker edge aging */
+    radial-gradient(
+      ellipse at 50% 50%,
+      rgba(60, 50, 35, 0) 40%,
+      rgba(40, 30, 20, 0.35) 100%
+    ),
+
+    /* Layer 3 — fine grain texture (high-frequency noise simulation) */
+    repeating-radial-gradient(
+      circle at 15px 15px,
+      rgba(100, 85, 55, 0.04) 0px,
+      rgba(100, 85, 55, 0.04) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    repeating-radial-gradient(
+      circle at 38px 22px,
+      rgba(120, 100, 70, 0.03) 0px,
+      rgba(120, 100, 70, 0.03) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+
+    /* Layer 4 — subtle gold/brown grid */
+    linear-gradient(
+      rgba(255, 215, 0, 0.04) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 215, 0, 0.04) 1px,
+      transparent 1px
+    );
+
+  background-size:
+    /* Layer 1 */
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    /* Layer 2 */
+    100% 100%,
+    /* Layer 3 */
+    15px 15px,
+    19px 19px,
+    /* Layer 4 — grid cells */
+    40px 40px,
+    40px 40px;
+
+  /* Edge vignette — darkens board perimeter */
+  box-shadow:
+    inset 0 0 80px 20px rgba(0, 0, 0, 0.5),
+    inset 0 0 180px 60px rgba(0, 0, 0, 0.3);
+
+  cursor: grab;
+}
+
+#game-board:active {
+  cursor: grabbing;
+}
+
+#game-board.panning {
+  cursor: grabbing;
+}
+
+/* ============================================================
+   Board viewport — transforms for panning
+   ============================================================ */
+.board-viewport {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+}
+
+/* ============================================================
+   Sell Zone — circular gold coin drop area
+   ============================================================ */
+
+/* Keyframes for sell zone glow pulse */
+@keyframes sell-zone-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 8px 2px rgba(255, 215, 0, 0.3),
+      inset 0 0 8px rgba(255, 215, 0, 0.08);
+    border-color: rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 20px 6px rgba(255, 215, 0, 0.6),
+      inset 0 0 14px rgba(255, 215, 0, 0.18);
+    border-color: rgba(255, 215, 0, 0.9);
+  }
+}
+
+@keyframes sell-zone-pulse-fast {
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px 3px rgba(255, 215, 0, 0.4),
+      inset 0 0 10px rgba(255, 215, 0, 0.1);
+    border-color: rgba(255, 215, 0, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow:
+      0 0 28px 8px rgba(255, 215, 0, 0.75),
+      inset 0 0 18px rgba(255, 215, 0, 0.25);
+    border-color: rgba(255, 215, 0, 1);
+    transform: scale(1.08);
+  }
+}
+
+.sell-zone {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 50px;
+  height: 50px;
+
+  /* Circular */
+  border-radius: 50%;
+  border: 2px solid rgba(255, 215, 0, 0.35);
+
+  /* Dark semi-transparent background */
+  background: rgba(20, 18, 14, 0.65);
+
+  /* Subtle default glow */
+  box-shadow:
+    0 0 6px 1px rgba(255, 215, 0, 0.15),
+    inset 0 0 6px rgba(255, 215, 0, 0.04);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 22px;
+  line-height: 1;
+  color: rgba(255, 215, 0, 0.6);
+
+  opacity: 0.5;
+  transition:
+    opacity 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+
+  z-index: 100;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sell-zone::before {
+  content: '💰';
+  display: block;
+}
+
+/* Active state — card is being dragged over the sell zone */
+.sell-zone.active {
+  opacity: 1;
+  border-color: rgba(255, 215, 0, 0.85);
+  background: rgba(40, 35, 20, 0.8);
+  animation: sell-zone-pulse-fast 0.6s ease-in-out infinite;
+}
+
+/* ============================================================
+   Drag Ghost — semi-transparent copy at original position
+   ============================================================ */
+.drag-ghost {
+  position: absolute;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 5000;
+  filter: grayscale(0.3) brightness(0.8);
+}
+
+/* ============================================================
+   Particles
+   ============================================================ */
+.particle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 99999;
+  border-radius: 50%;
+  will-change: transform, opacity;
+}
+
+/* ============================================================
+   Particle Burst Keyframes
+   ============================================================ */
+@keyframes particle-burst-up {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx, 0px), calc(var(--dy, -20px) - 10px)) scale(0);
+  }
+}
+
+@keyframes particle-burst-down {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx, 0px), calc(var(--dy, 20px) + 10px)) scale(0);
+  }
+}
+
+@keyframes particle-burst-out {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx, 20px), var(--dy, 20px)) scale(0);
+  }
+}
+
+@keyframes particle-float-up {
+  0% {
+    opacity: 0;
+    transform: translate(0, 10px) scale(0.5);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(0, -5px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, -40px) scale(0.3);
+  }
+}
+
+@keyframes particle-spawn-burst {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(var(--dx, 0px) * 2),
+        calc(var(--dy, 0px) * 2)
+      )
+      scale(0.2);
+  }
+}

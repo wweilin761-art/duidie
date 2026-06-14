@@ -1,0 +1,87 @@
+{
+  "name": "stacklands-vscode",
+  "displayName": "堆叠大陆 Stacklands",
+  "description": "卡牌式村庄建设模拟游戏 — 复刻 Stacklands 玩法",
+  "version": "0.2.0",
+  "publisher": "stacklands-dev",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:stacklands.gameView"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "stacklands-sidebar",
+          "title": "堆叠大陆 Stacklands",
+          "icon": "$(layers)"
+        }
+      ]
+    },
+    "views": {
+      "stacklands-sidebar": [
+        {
+          "type": "webview",
+          "id": "stacklands.gameView",
+          "name": "游戏"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "stacklands.startGame",
+        "title": "堆叠大陆: 开始游戏"
+      },
+      {
+        "command": "stacklands.saveGame",
+        "title": "堆叠大陆: 保存游戏"
+      },
+      {
+        "command": "stacklands.loadGame",
+        "title": "堆叠大陆: 加载游戏"
+      },
+      {
+        "command": "stacklands.resetGame",
+        "title": "堆叠大陆: 重置游戏"
+      },
+      {
+        "command": "stacklands.clearSaves",
+        "title": "堆叠大陆: 清除存档"
+      }
+    ],
+    "configuration": {
+      "title": "堆叠大陆 Stacklands",
+      "properties": {
+        "stacklands.autosaveInterval": {
+          "type": "number",
+          "default": 120,
+          "description": "自动保存间隔（秒）"
+        },
+        "stacklands.soundEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用音效"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile && npm run bundle-webview",
+    "compile": "tsc -p ./tsconfig.json",
+    "watch": "tsc -watch -p ./tsconfig.json",
+    "bundle-webview": "node esbuild.config.mjs",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.19.11",
+    "typescript": "^5.3.3"
+  }
+}

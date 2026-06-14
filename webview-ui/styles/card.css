@@ -1,0 +1,601 @@
+/* ============================================================
+   Card Styles — individual card appearance
+   ============================================================ */
+
+/* ------- CSS Variables ------- */
+:root {
+  --card-width: 72px;
+  --card-height: 96px;
+  --card-radius: 6px;
+  --card-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --card-lifted-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+/* ------- Card base ------- */
+.card {
+  position: absolute;
+  width: var(--card-width);
+  min-height: var(--card-height);
+  background: var(--vscode-editorWidget-background, #2d2d2d);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: var(--card-radius);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  cursor: grab;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 4px 4px;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    filter 0.2s ease,
+    background 0.3s ease;
+  z-index: 1;
+  overflow: hidden;
+  user-select: none;
+  color: var(--vscode-foreground, #cccccc);
+}
+
+/* ------- Category-colored backgrounds ------- */
+.card[data-category="Resource"] {
+  background: linear-gradient(135deg, #4a3d28 0%, #3a2e1c 100%);
+  border-color: #8a7a50;
+}
+
+.card[data-category="Food"] {
+  background: linear-gradient(135deg, #3a4a28 0%, #2a3820 100%);
+  border-color: #7a9a50;
+}
+
+.card[data-category="Villager"] {
+  background: linear-gradient(135deg, #2a5080 0%, #1a3860 100%);
+  border-color: #6a9ac0;
+  border-width: 3px;
+  box-shadow: 0 0 10px rgba(100, 160, 220, 0.3);
+}
+
+.card[data-category="Building"] {
+  background: linear-gradient(135deg, #5a4a3a 0%, #4a3828 100%);
+  border-color: #c8a870;
+  box-shadow: 0 0 8px rgba(200, 168, 112, 0.15);
+}
+
+.card[data-category="Tool"] {
+  background: linear-gradient(135deg, #424242 0%, #323232 100%);
+  border-color: #7a7a7a;
+}
+
+.card[data-category="Enemy"] {
+  background: linear-gradient(135deg, #4a2020 0%, #3a1818 100%);
+  border-color: #8a4040;
+}
+
+.card[data-category="Idea"] {
+  background: linear-gradient(135deg, #4a4228 0%, #3a3420 100%);
+  border-color: #8a8040;
+}
+
+.card[data-category="Special"] {
+  background: linear-gradient(135deg, #3a284a 0%, #2a1c38 100%);
+  border-color: #7a4a8a;
+}
+
+/* Left color accent — complementary to category */
+.card[data-category] {
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+.card[data-category="Resource"] { border-left-color: #8b7355; }
+.card[data-category="Food"]     { border-left-color: #7a9b4a; }
+.card[data-category="Villager"] { border-left-color: #5a8aaa; }
+.card[data-category="Building"] { border-left-color: #8b7a6a; }
+.card[data-category="Tool"]     { border-left-color: #7a7a7a; }
+.card[data-category="Enemy"]    { border-left-color: #aa5a5a; }
+.card[data-category="Idea"]     { border-left-color: #aa9a5a; }
+.card[data-category="Special"]  { border-left-color: #8a5aaa; }
+
+/* ------- Rarity / tier glow ------- */
+.card[data-tier="0"] {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  border-width: 1px;
+}
+
+.card[data-tier="1"] {
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    0 0 8px rgba(78, 201, 78, 0.25);
+}
+
+.card[data-tier="2"] {
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 0 14px rgba(100, 120, 255, 0.35);
+}
+
+.card[data-tier="3"],
+.card[data-tier="4"],
+.card[data-tier="5"] {
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.35),
+    0 0 10px rgba(255, 200, 50, 0.4);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Nest tier border colors within glow */
+.card[data-tier="1"] { border-color: rgba(78, 201, 78, 0.5); }
+.card[data-tier="2"] { border-color: rgba(100, 120, 255, 0.55); }
+.card[data-tier="3"],
+.card[data-tier="4"],
+.card[data-tier="5"] {
+  border-color: rgba(255, 200, 50, 0.6);
+}
+
+/* ------- Icon circle ------- */
+.card-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 3px;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.card:hover .card-icon-circle {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Icon inside circle */
+.card-icon-circle .card-icon {
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+  margin: 0;
+}
+
+/* ------- Card name ------- */
+.card-name {
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+  color: var(--vscode-foreground, #dddddd);
+}
+
+/* ------- Stack count (bottom-right corner) ------- */
+.card-count {
+  position: absolute;
+  bottom: 3px;
+  right: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.7),
+    0 0 4px rgba(0, 0, 0, 0.5);
+  opacity: 0.85;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ------- Stacked card (Spider Solitaire style) ------- */
+.card.stacked {
+  /* Subtle drop-shadow to show depth between stacked cards */
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    0 0 4px rgba(255, 255, 255, 0.03);
+  /* Slightly darker to indicate it's not the top card */
+  filter: brightness(0.96);
+}
+
+/* Deeper cards in the stack are progressively darker */
+.card.stacked[data-stack-depth="0"] {
+  filter: brightness(0.94);
+  z-index: 1;
+}
+
+.card.stacked[data-stack-depth="1"] {
+  filter: brightness(0.96);
+  z-index: 2;
+}
+
+.card.stacked[data-stack-depth="2"] {
+  filter: brightness(0.98);
+  z-index: 3;
+}
+
+/* Cards beyond depth 3: full brightness, increment z-index */
+.card.stacked[data-stack-depth="3"],
+.card.stacked[data-stack-depth="4"],
+.card.stacked[data-stack-depth="5"],
+.card.stacked[data-stack-depth] {
+  filter: brightness(1);
+}
+
+/* Dynamic z-index for deeper cards — use inline style override */
+.card.stacked[data-stack-depth="3"]  { z-index: 4; }
+.card.stacked[data-stack-depth="4"]  { z-index: 5; }
+.card.stacked[data-stack-depth="5"]  { z-index: 6; }
+.card.stacked[data-stack-depth="6"]  { z-index: 7; }
+.card.stacked[data-stack-depth="7"]  { z-index: 8; }
+.card.stacked[data-stack-depth="8"]  { z-index: 9; }
+.card.stacked[data-stack-depth="9"]  { z-index: 10; }
+.card.stacked[data-stack-depth="10"] { z-index: 11; }
+
+/* Override hover scale for stacked cards — keep stack tidy */
+.card.stacked:hover {
+  transform: none;
+}
+
+/* ------- Timer bar ------- */
+.card-timer-bar {
+  width: 100%;
+  height: 5px;
+  background: var(--vscode-input-background, rgba(0, 0, 0, 0.3));
+  border-radius: 3px;
+  margin-top: auto;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.card-timer-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--vscode-progressBar-background, #0e70c0);
+  transition: width 0.1s linear;
+  position: relative;
+}
+
+/* Shimmer moving gradient on timer fill */
+.card-timer-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 100%
+  );
+  animation: shimmer-timer 2s linear infinite;
+}
+
+/* Color-coded by timer label */
+.card[data-timer-label*="再生"] .card-timer-fill,
+.card[data-timer-label*="生长"] .card-timer-fill,
+.card[data-timer-label*="鱼群"] .card-timer-fill {
+  background: linear-gradient(180deg, #4ec94e 0%, #3a9e3a 100%);
+}
+
+.card[data-timer-label*="制作"] .card-timer-fill,
+.card[data-timer-label*="合成"] .card-timer-fill,
+.card[data-timer-label*="建造"] .card-timer-fill,
+.card[data-timer-label*="锻造"] .card-timer-fill,
+.card[data-timer-label*="炼"] .card-timer-fill {
+  background: linear-gradient(180deg, #4ea0e0 0%, #3070c0 100%);
+}
+
+.card[data-timer-label*="战斗"] .card-timer-fill,
+.card[data-timer-label*="攻击"] .card-timer-fill,
+.card[data-timer-label*="训练"] .card-timer-fill {
+  background: linear-gradient(180deg, #e05050 0%, #b03030 100%);
+}
+
+.card-timer-label {
+  font-size: 9px;
+  color: var(--vscode-descriptionForeground, #888888);
+  text-align: center;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+/* ------- Hunger bar ------- */
+.card-hunger-bar {
+  width: 100%;
+  height: 5px;
+  background: var(--vscode-input-background, rgba(0, 0, 0, 0.3));
+  border-radius: 3px;
+  margin-top: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card-hunger-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #4ec94e;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* Starving pulse animation */
+.card.starving .card-hunger-fill {
+  animation: pulse-starvation 0.8s ease-in-out infinite;
+}
+
+/* ------- Health bar ------- */
+.card-health-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--vscode-input-background, rgba(0, 0, 0, 0.3));
+  border-radius: 3px;
+  margin-top: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card-health-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #4ec94e 0%, #e0c030 50%, #e03030 100%);
+  background-size: 200% 100%;
+  background-position: right center;
+  transition: width 0.3s ease, background-position 0.3s ease;
+}
+
+/* When health is above 60%, show more green */
+/* Controlled via JS dynamic background, fallback gradient */
+.card-health-fill[style*="width: 1"] { background-position: left center; }
+
+/* ------- Card tooltip ------- */
+.card-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--vscode-editorWidget-background, #383838);
+  border: 1px solid var(--vscode-panel-border, #555555);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 1001;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.card:hover .card-tooltip {
+  opacity: 1;
+}
+
+/* ------- Card hover ------- */
+.card:hover {
+  z-index: 5;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+}
+
+/* Override hover scale when dragging or locked */
+.card.dragging:hover,
+.card.locked:hover {
+  transform: none;
+}
+
+/* ------- Card active (pressing) ------- */
+.card:active {
+  cursor: grabbing;
+}
+
+/* ------- Card dragging ------- */
+.card.dragging {
+  z-index: 1000 !important;
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.55),
+    0 0 20px rgba(255, 255, 255, 0.08);
+  transform: scale(1.08) rotate(-2deg);
+  opacity: 0.92;
+  cursor: grabbing;
+  pointer-events: none;
+  filter: none !important;
+}
+
+/* ------- Card locked ------- */
+.card.locked {
+  cursor: default;
+  filter: grayscale(30%);
+  border-style: dashed;
+  opacity: 0.8;
+}
+
+/* ------- Card drop target highlight ------- */
+.card.drop-target {
+  border-color: var(--vscode-charts-green, #4ec9b0);
+  box-shadow:
+    0 0 10px rgba(78, 201, 176, 0.5),
+    0 0 20px rgba(78, 201, 176, 0.2);
+  animation: pulse-drop-target 1.2s ease-in-out infinite;
+}
+
+/* ------- Card entering the board ------- */
+.card.entering {
+  animation: cardEnter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ------- Enemy spawn slide-in animation ------- */
+.card.enemy-spawn {
+  animation: enemy-spawn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+/* ------- Card leaving (dying / consumed) ------- */
+.card.leaving {
+  animation: cardLeave 0.35s ease-in forwards;
+}
+
+/* ------- Card combine effect ------- */
+.card.combining {
+  animation: cardCombine 0.35s ease-out forwards;
+}
+
+/* ------- Flash overlay for combine ------- */
+.card-combine-flash {
+  pointer-events: none;
+}
+
+/* ------- Starving card — pulsing red border ------- */
+.card.starving {
+  animation: pulse-red-border 0.8s ease-in-out infinite;
+}
+
+/* ============================================================
+   Keyframe animations
+   ============================================================ */
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.3) translateY(-20px) rotate(var(--enter-rotation, 5deg));
+  }
+  60% {
+    transform: scale(1.08) translateY(2px) rotate(calc(var(--enter-rotation, 5deg) * -0.3));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes cardLeave {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    clip-path: inset(0 0 0 0);
+  }
+  30% {
+    opacity: 0.9;
+    transform: scale(1.05) rotate(3deg);
+    clip-path: inset(0 0 0 0);
+  }
+  60% {
+    opacity: 0.5;
+    transform: scale(0.9) rotate(8deg);
+    clip-path: inset(5% 10% 30% 15%);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(12deg);
+    clip-path: inset(40% 40% 50% 50%);
+  }
+}
+
+@keyframes cardCombine {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.18);
+    filter: brightness(1.4);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes combine-flash {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-red-border {
+  0%, 100% {
+    border-color: #cc0000;
+    box-shadow: 0 0 6px rgba(255, 0, 0, 0.3);
+  }
+  50% {
+    border-color: #ff4444;
+    box-shadow: 0 0 14px rgba(255, 0, 0, 0.6);
+  }
+}
+
+@keyframes enemy-spawn {
+  from {
+    transform: translateX(-150px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 3px 10px rgba(0, 0, 0, 0.35),
+      0 0 10px rgba(255, 200, 50, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 3px 10px rgba(0, 0, 0, 0.35),
+      0 0 22px rgba(255, 200, 50, 0.7),
+      0 0 40px rgba(255, 200, 50, 0.2);
+  }
+}
+
+@keyframes pulse-starvation {
+  0%,
+  100% {
+    opacity: 1;
+    background-color: #cc0000;
+  }
+  50% {
+    opacity: 0.5;
+    background-color: #ff2020;
+  }
+}
+
+@keyframes pulse-drop-target {
+  0%,
+  100% {
+    border-color: #4ec9b0;
+    box-shadow:
+      0 0 10px rgba(78, 201, 176, 0.5),
+      0 0 20px rgba(78, 201, 176, 0.2);
+  }
+  50% {
+    border-color: #6ee9d0;
+    box-shadow:
+      0 0 18px rgba(78, 201, 176, 0.7),
+      0 0 32px rgba(78, 201, 176, 0.35);
+  }
+}
+
+@keyframes shimmer-timer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}

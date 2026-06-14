@@ -1,0 +1,269 @@
+/* ============================================================
+   Stacklands — Main Stylesheet
+   Uses VSCode CSS custom properties for theme compatibility.
+   ============================================================ */
+
+:root {
+  --card-width: 80px;
+  --card-height: 100px;
+  --card-radius: 6px;
+  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --card-lifted-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  --toolbar-height: 34px;
+  --inspector-width: 170px;
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  font-family: var(--vscode-editor-font-family, 'Segoe UI', system-ui, sans-serif);
+  font-size: var(--vscode-editor-font-size, 13px);
+  background-color: var(--vscode-editor-background, #1e1e1e);
+  color: var(--vscode-editor-foreground, #cccccc);
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+#game-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ============================================================
+   Light Theme Overrides
+   Uses data-theme attribute set by the extension on theme change.
+   ============================================================ */
+[data-theme="light"] {
+  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  --card-lifted-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] html,
+[data-theme="light"] body {
+  background-color: #f3f0e8;
+  color: #1a1a1a;
+}
+
+[data-theme="light"] #game-board {
+  background-color: #f3f0e8;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+[data-theme="light"] #toolbar {
+  background: rgba(240, 235, 225, 0.92);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] #toolbar button {
+  background: rgba(0, 0, 0, 0.04);
+  color: #333333;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] #toolbar button:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] #toolbar button.active {
+  background: #0e70c0;
+  color: #ffffff;
+}
+
+[data-theme="light"] #toolbar .toolbar-label {
+  color: #555555;
+}
+
+[data-theme="light"] #toolbar .toolbar-value {
+  color: #1a1a1a;
+}
+
+/* Cards in light mode — higher contrast, lighter parchment base */
+[data-theme="light"] .card {
+  background: #faf8f2;
+  color: #1a1a1a;
+  border-color: #c8c0b0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .card:hover {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .card .card-name {
+  color: #222222;
+}
+
+[data-theme="light"] .card .card-tooltip {
+  background: #faf8f2;
+  border-color: #ccc4b4;
+  color: #333333;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .card-icon-circle {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .card:hover .card-icon-circle {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Light theme category backgrounds — softer pastels */
+[data-theme="light"] .card[data-category="Resource"] {
+  background: linear-gradient(135deg, #f5ede0 0%, #ede5d5 100%);
+  border-color: #c8b898;
+}
+
+[data-theme="light"] .card[data-category="Food"] {
+  background: linear-gradient(135deg, #eaf5e0 0%, #dde8d0 100%);
+  border-color: #a8c898;
+}
+
+[data-theme="light"] .card[data-category="Villager"] {
+  background: linear-gradient(135deg, #e0ecf5 0%, #d0dce8 100%);
+  border-color: #98a8c8;
+}
+
+[data-theme="light"] .card[data-category="Building"] {
+  background: linear-gradient(135deg, #f0e8e0 0%, #e8dcd0 100%);
+  border-color: #c8b8a8;
+}
+
+[data-theme="light"] .card[data-category="Tool"] {
+  background: linear-gradient(135deg, #eaeaea 0%, #dddddd 100%);
+  border-color: #b0b0b0;
+}
+
+[data-theme="light"] .card[data-category="Enemy"] {
+  background: linear-gradient(135deg, #f5e0e0 0%, #e8d0d0 100%);
+  border-color: #c89898;
+}
+
+[data-theme="light"] .card[data-category="Idea"] {
+  background: linear-gradient(135deg, #f5f0e0 0%, #e8e2d0 100%);
+  border-color: #c8c098;
+}
+
+[data-theme="light"] .card[data-category="Special"] {
+  background: linear-gradient(135deg, #ede0f5 0%, #e0d0e8 100%);
+  border-color: #b898c8;
+}
+
+/* Inspector light mode */
+[data-theme="light"] #card-inspector {
+  background: #faf8f2;
+  border-left-color: #c8c0b0;
+}
+
+[data-theme="light"] #card-inspector .inspector-name {
+  color: #1a1a1a;
+}
+
+[data-theme="light"] #card-inspector .inspector-stat .stat-value {
+  color: #222222;
+}
+
+/* Shop modal light mode */
+[data-theme="light"] #shop-modal .shop-content {
+  background: #faf8f2;
+  border-color: #c8c0b0;
+}
+
+[data-theme="light"] #shop-modal h2 {
+  color: #1a1a1a;
+}
+
+[data-theme="light"] .shop-pack {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: #c8c0b0;
+}
+
+[data-theme="light"] .shop-pack .pack-name {
+  color: #1a1a1a;
+}
+
+[data-theme="light"] .shop-pack .pack-price {
+  color: #8a6d00;
+}
+
+/* Toast light mode — lighter backgrounds with readable text */
+[data-theme="light"] .toast {
+  background: #faf8f2;
+  color: #1a1a1a;
+  border-color: #c8c0b0;
+}
+
+[data-theme="light"] .toast .toast-message {
+  color: #222222;
+}
+
+[data-theme="light"] .toast.toast-info {
+  border-left-color: #1976d2;
+}
+
+[data-theme="light"] .toast.toast-success {
+  border-left-color: #388e3c;
+}
+
+[data-theme="light"] .toast.toast-warning {
+  border-left-color: #e6a800;
+}
+
+[data-theme="light"] .toast.toast-error {
+  border-left-color: #d32f2f;
+}
+
+/* Recipe book light mode */
+[data-theme="light"] #recipe-book {
+  background: #faf8f2;
+  border-right-color: #c8c0b0;
+}
+
+[data-theme="light"] #recipe-book h3 {
+  color: #1a1a1a;
+}
+
+[data-theme="light"] #recipe-book .recipe-card {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: #c8c0b0;
+}
+
+[data-theme="light"] #recipe-book .recipe-card:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ============================================================
+   Scrollbar styling
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background, #424242);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground, #555555);
+}
