@@ -36,7 +36,13 @@ export class CardInspector {
   /**
    * Show details for the given card.  Builds the full DOM for the panel.
    */
-  show(card: CardInstance): void {
+  /**
+   * Show card details.
+   * @param card The card instance data
+   * @param effectiveCount Optional effective count (stack group size). If not provided,
+   *                       falls back to card.stackCount.
+   */
+  show(card: CardInstance, effectiveCount?: number): void {
     // Clear previous content safely — no innerHTML
     while (this.contentEl.firstChild) {
       this.contentEl.removeChild(this.contentEl.firstChild);
@@ -69,7 +75,7 @@ export class CardInspector {
       ['类别', def.category],
       ['等级', String(def.tier)],
       ['售价', def.sellValue + ' 金币'],
-      ['堆叠', card.stackCount > 1 ? card.stackCount + '/' + def.maxStack : '单个'],
+      ['堆叠', ((effectiveCount ?? card.stackCount) > 1 ? (effectiveCount ?? card.stackCount) + '/' + def.maxStack : '单个')],
     ];
 
     for (const [label, value] of statRows) {

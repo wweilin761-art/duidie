@@ -77,9 +77,10 @@ export class ShopManager {
     // Cannot sell locked cards (e.g., cards in active recipes)
     if (card.locked) return false;
 
-    // Compute sell value: base value * stack count
+    // Compute sell value: base value * effective count (stack group size)
     const def = getCardDef(card.defId);
-    const sellValue = def ? def.sellValue * card.stackCount : 1;
+    const effectiveCount = this.board.getStackGroupSize(cardId);
+    const sellValue = def ? def.sellValue * effectiveCount : 1;
 
     // Add coins and remove card
     this.gameState.coins += sellValue;

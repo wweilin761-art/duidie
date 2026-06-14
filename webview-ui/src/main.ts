@@ -359,7 +359,8 @@ function spawnCardBatch(
       if (uid) {
         const entity = board.getEntity(uid);
         if (entity) {
-          cardInspector.show(entity.data); // Pass CardInstance, not CardEntity
+          const effectiveCount = entity.isInStack() ? board.getStackGroupSize(uid) : entity.data.stackCount;
+          cardInspector.show(entity.data, effectiveCount);
           return;
         }
       }

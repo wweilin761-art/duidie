@@ -210,6 +210,9 @@ export class CardEntity {
     // Z-index
     if (this.isDragging) {
       el.style.zIndex = '1000';
+    } else if (this.stackGroupId) {
+      // For stacked cards, let CSS handle z-index based on depth
+      el.style.zIndex = '';
     } else {
       el.style.zIndex = '1';
     }

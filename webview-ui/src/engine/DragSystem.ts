@@ -221,10 +221,12 @@ export class DragSystem {
         entity.data.position.y + 50,
       );
 
-      // Snap extra cards back first
-      this.snapBackExtras();
+      // For stack groups, don't snap back — the sell handler will sell all cards
+      if (!entity.stackGroupId) {
+        this.snapBackExtras();
+      }
 
-      // Call sell callback
+      // Call sell callback (handles the entire stack group in main.ts)
       this.onSell(entity.uid);
       this.resetDragState();
       return;

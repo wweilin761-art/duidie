@@ -266,7 +266,11 @@ export class RecipeEngine {
       }
 
       // Consume inputs with stack group aware handling
-      this.consumeAssignedInputs(active);
+      this.consumeAssignedInputs({
+        consumed: active.consumedUids,
+        nonConsumed: [],
+        consumeCounts: active.consumeCounts,
+      });
 
       // Unlock non-consumed cards
       const nonConsumedUids = active.lockedUids.filter(
