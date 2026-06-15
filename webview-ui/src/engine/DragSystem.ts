@@ -9,6 +9,7 @@
 import { Board } from './Board';
 import { CardEntity } from './CardEntity';
 import { ParticleEffect } from './ParticleEffect';
+import { sound } from './SoundSystem';
 
 /** Z-index applied to a card while it is being dragged */
 const DRAG_Z_INDEX = '10000';
@@ -273,6 +274,7 @@ export class DragSystem {
       // Clean up dragged entities (primary + extras)
       this.cleanUpDraggedEntities();
     } else {
+      sound.drop();
       // Keep card at new position — don't snap back
       // For stack groups, realign positions; for single cards, snap back extras
       if (entity.stackGroupId) {
@@ -301,6 +303,8 @@ export class DragSystem {
     if (!this.draggedEntity) return;
 
     this.isDragging = true;
+
+    sound.pickUp();
 
     // Style the primary dragged card
     this.draggedEntity.isDragging = true;

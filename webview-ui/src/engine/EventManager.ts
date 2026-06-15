@@ -11,6 +11,7 @@ import { Board } from './Board';
 import { CardEntity } from './CardEntity';
 import { ParticleEffect } from './ParticleEffect';
 import { getCardDef } from '../data/cards';
+import { sound } from './SoundSystem';
 import type { ShopPack } from '../data/shop';
 
 /** How many recent event IDs to track to avoid repeats */
@@ -295,6 +296,7 @@ export class EventManager {
     }
 
     this.onToast(`${event.name}: ${event.description}`);
+    sound.event();
   }
 
   private rememberEvent(eventId: string): void {

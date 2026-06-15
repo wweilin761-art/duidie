@@ -15,6 +15,7 @@ import { Board } from './Board';
 import { SeasonManager } from './SeasonManager';
 import type { CardInstance, SerializedActiveRecipe } from '../../../src/protocol/messages';
 import { getCardDef } from '../data/cards';
+import { sound } from './SoundSystem';
 
 /** Result of matching recipe inputs to available cards */
 interface InputAssignment {
@@ -321,6 +322,8 @@ export class RecipeEngine {
         this.handleEatingResult(active);
       }
 
+      sound.complete();
+
       // Clear the timer on the host card
       // If the host card was consumed, it has already been removed above.
       // If non-consumed (e.g., villager), just clear the timer and update DOM.
@@ -525,6 +528,7 @@ export class RecipeEngine {
       const card = this.gameState.findCard(uid);
       if (card && card.defId === 'villager' && card.villagerState) {
         this.restoreVillagerHunger(card, foodInput.defId);
+        sound.eat();
       }
     }
   }

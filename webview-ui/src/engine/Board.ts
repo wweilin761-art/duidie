@@ -72,17 +72,19 @@ export class Board {
 
   /** Get screen position from board coordinates */
   boardToScreen(boardX: number, boardY: number): { x: number; y: number } {
+    const rect = this.el.getBoundingClientRect();
     return {
-      x: boardX * this.scale + this.panX,
-      y: boardY * this.scale + this.panY,
+      x: boardX * this.scale + this.panX + rect.left,
+      y: boardY * this.scale + this.panY + rect.top,
     };
   }
 
   /** Get board coordinates from screen position */
   screenToBoard(screenX: number, screenY: number): { x: number; y: number } {
+    const rect = this.el.getBoundingClientRect();
     return {
-      x: (screenX - this.panX) / this.scale,
-      y: (screenY - this.panY) / this.scale,
+      x: (screenX - rect.left - this.panX) / this.scale,
+      y: (screenY - rect.top - this.panY) / this.scale,
     };
   }
 

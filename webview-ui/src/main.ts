@@ -34,6 +34,7 @@ import { TechBook } from './ui/TechBook';
 import { TutorialBook } from './ui/TutorialBook';
 import { StoryDialog } from './ui/StoryDialog';
 import { summarizeResources } from './engine/ResourceSystem';
+import { sound } from './engine/SoundSystem';
 import { previewCombat, applyCombatRound } from './engine/BattleSystem';
 import { getStoryDialogue } from './data/story';
 import { TECH_NODES as DATA_TECH_NODES } from './data/technology';
@@ -214,6 +215,7 @@ function spawnCardBatch(
     onSave: () => {
       requestSave(0, buildSaveState());
       toastRenderer.show('游戏已保存。', 'success');
+      sound.click();
     },
     onLoad: () => {
       requestLoad(0);
@@ -451,6 +453,7 @@ function spawnCardBatch(
     const mx = (draggedEntity.data.position.x + targetEntity.data.position.x) / 2;
     const my = (draggedEntity.data.position.y + targetEntity.data.position.y) / 2;
     ParticleEffect.combine(board.viewportElement, mx, my);
+    sound.combine();
     return true;
   }
 
@@ -585,6 +588,7 @@ function spawnCardBatch(
       if (!card) return;
       const def = getCardDef(card.defId);
       if (!def) return;
+      sound.sell();
 
       // Sell ALL cards in the stack group (or just one if not stacked)
       const uidsToSell = board.getStackGroupUids(cardUid);

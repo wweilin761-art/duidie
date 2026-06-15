@@ -28,6 +28,7 @@ import { evaluateProgression, evaluateResearch } from './ProgressionSystem';
 import { resolveStoryMilestones } from './StorySystem';
 import { summarizeResources } from './ResourceSystem';
 import { CardEntity } from './CardEntity';
+import { sound } from './SoundSystem';
 import type { CardInstance, GameStatus } from '../../../src/protocol/messages';
 
 /** Wall-clock seconds between autosaves. */
@@ -199,6 +200,7 @@ export class GameLoop {
       this.eventManager.onMonthAdvance(this.gameState.month);
       this.shopManager.queueShopForMonth();
       if (this.onShopReady) this.onShopReady();
+      sound.monthStart();
     }
 
     // Update derived fields so they stay in sync with TimeManager.
@@ -392,6 +394,8 @@ export class GameLoop {
         'warning',
         4000,
       );
+
+      sound.death();
 
       // Clean up any active recipe this villager was part of
       this.recipeEngine.cancelRecipeForCard(villager.uid);
