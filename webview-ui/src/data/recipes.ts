@@ -79,6 +79,59 @@ export const RECIPES: Recipe[] = [
 
   // === Buildings ===
   {
+    id: 'build_camp',
+    inputs: [
+      { defId: 'plank', count: 2, consumed: true },
+      { defId: 'stone', count: 2, consumed: true },
+    ],
+    output: { defId: 'camp', count: 1 },
+    duration: 12,
+    consumesInputs: true,
+  },
+  {
+    id: 'build_research_table',
+    inputs: [
+      { defId: 'plank', count: 1, consumed: true },
+      { defId: 'stone', count: 1, consumed: true },
+    ],
+    output: { defId: 'research_table', count: 1 },
+    duration: 6,
+    consumesInputs: true,
+  },
+  {
+    id: 'research_storage',
+    inputs: [
+      { defId: 'research_table', count: 1, consumed: false },
+      { defId: 'wood', count: 1, consumed: true },
+      { defId: 'stone', count: 1, consumed: true },
+    ],
+    output: { defId: 'idea_storage', count: 1 },
+    duration: 8,
+    consumesInputs: true,
+  },
+  {
+    id: 'build_lumber_camp',
+    inputs: [
+      { defId: 'wood', count: 2, consumed: true },
+      { defId: 'plank', count: 1, consumed: true },
+      { defId: 'forest_land', count: 1, consumed: false },
+    ],
+    output: { defId: 'lumber_camp', count: 1 },
+    duration: 10,
+    consumesInputs: true,
+  },
+  {
+    id: 'build_quarry',
+    inputs: [
+      { defId: 'stone', count: 2, consumed: true },
+      { defId: 'plank', count: 1, consumed: true },
+      { defId: 'rocky_land', count: 1, consumed: false },
+    ],
+    output: { defId: 'quarry', count: 1 },
+    duration: 10,
+    consumesInputs: true,
+  },
+  {
     id: 'build_campfire',
     inputs: [
       { defId: 'wood', count: 1, consumed: true },
@@ -248,6 +301,67 @@ export const RECIPES: Recipe[] = [
   },
 
   // === Combat ===
+  {
+    id: 'build_exploration_party',
+    inputs: [
+      { defId: 'villager', count: 3, consumed: true },
+      { defId: 'berry', count: 3, consumed: true },
+    ],
+    output: { defId: 'exploration_party', count: 1 },
+    duration: 10,
+    consumesInputs: true,
+  },
+  {
+    id: 'read_memory_fragment',
+    inputs: [
+      { defId: 'memory_fragment', count: 1, consumed: true },
+      { defId: 'camp', count: 1, consumed: false },
+    ],
+    output: { defId: 'stone_tablet', count: 1 },
+    duration: 6,
+    consumesInputs: true,
+  },
+  {
+    id: 'find_sun_card',
+    inputs: [
+      { defId: 'exploration_party', count: 1, consumed: true },
+      { defId: 'forest_land', count: 1, consumed: false },
+    ],
+    output: { defId: 'sun_card', count: 1 },
+    duration: 12,
+    consumesInputs: true,
+  },
+  {
+    id: 'chart_moon',
+    inputs: [
+      { defId: 'sun_card', count: 1, consumed: false },
+      { defId: 'old_sage', count: 1, consumed: false },
+    ],
+    output: { defId: 'moon_card', count: 1 },
+    duration: 8,
+    consumesInputs: false,
+  },
+  {
+    id: 'chart_stars',
+    inputs: [
+      { defId: 'moon_card', count: 1, consumed: false },
+      { defId: 'stone_tablet', count: 1, consumed: false },
+    ],
+    output: { defId: 'star_chart', count: 1 },
+    duration: 8,
+    consumesInputs: false,
+  },
+  {
+    id: 'craft_dawn',
+    inputs: [
+      { defId: 'sun_card', count: 1, consumed: true },
+      { defId: 'moon_card', count: 1, consumed: true },
+      { defId: 'star_chart', count: 1, consumed: true },
+    ],
+    output: { defId: 'dawn_card', count: 1 },
+    duration: 12,
+    consumesInputs: true,
+  },
   {
     id: 'fight_goblin',
     inputs: [

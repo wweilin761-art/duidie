@@ -76,12 +76,17 @@
     "compile": "tsc -p ./tsconfig.json",
     "watch": "tsc -watch -p ./tsconfig.json",
     "bundle-webview": "node esbuild.config.mjs",
-    "lint": "eslint src --ext ts"
+    "lint": "eslint src webview-ui/src tests scripts --ext .ts,.js,.mjs",
+    "test": "node scripts/run-tests.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
-    "esbuild": "^0.19.11",
-    "typescript": "^5.3.3"
+    "esbuild": "^0.28.1",
+    "eslint": "^10.5.0",
+    "globals": "^17.6.0",
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.61.0"
   }
 }

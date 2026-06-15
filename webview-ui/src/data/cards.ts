@@ -143,8 +143,32 @@ export const CARD_DEFS: Record<string, CardDef> = {
     description: '勤劳的村民，需要定期进食。',
     color: '#4A90D9',
   },
+  warrior: {
+    id: 'warrior',
+    name: '战士',
+    category: CardCategory.Villager,
+    tier: 2,
+    stackable: false,
+    maxStack: 1,
+    sellValue: 12,
+    icon: '🛡️',
+    description: '受过训练的战士，能在迷雾中保护营地。',
+    color: '#9B2C2C',
+  },
 
   // === Buildings ===
+  camp: {
+    id: 'camp',
+    name: '营地',
+    category: CardCategory.Building,
+    tier: 1,
+    stackable: false,
+    maxStack: 1,
+    sellValue: 6,
+    icon: '🏕️',
+    description: '最初的落脚点。只要篝烟还在，人们就不会忘记回家的路。',
+    color: '#A46A3F',
+  },
   campfire: {
     id: 'campfire',
     name: '篝火',
@@ -193,6 +217,42 @@ export const CARD_DEFS: Record<string, CardDef> = {
     description: '炽热的熔炉，能把矿石冶炼成锭。',
     color: '#CC4400',
   },
+  research_table: {
+    id: 'research_table',
+    name: '研究桌',
+    category: CardCategory.Building,
+    tier: 1,
+    stackable: false,
+    maxStack: 1,
+    sellValue: 8,
+    icon: '📜',
+    description: '用来整理想法和古老线索的工作台。',
+    color: '#7A5C3E',
+  },
+  lumber_camp: {
+    id: 'lumber_camp',
+    name: '伐木营地',
+    category: CardCategory.Building,
+    tier: 2,
+    stackable: false,
+    maxStack: 1,
+    sellValue: 12,
+    icon: '🪓',
+    description: '建在森林旁的营地，可以稳定产出木材。',
+    color: '#4F7D3A',
+  },
+  quarry: {
+    id: 'quarry',
+    name: '采石场',
+    category: CardCategory.Building,
+    tier: 2,
+    stackable: false,
+    maxStack: 1,
+    sellValue: 12,
+    icon: '⛏️',
+    description: '靠近岩地开凿的采石点，可以稳定产出石头。',
+    color: '#666B70',
+  },
 
   // === Tools ===
   axe: {
@@ -233,6 +293,42 @@ export const CARD_DEFS: Record<string, CardDef> = {
   },
 
   // === Resource Nodes (generate resources) ===
+  fertile_land: {
+    id: 'fertile_land',
+    name: '肥沃土地',
+    category: CardCategory.Resource,
+    tier: 1,
+    stackable: false,
+    maxStack: 1,
+    sellValue: 4,
+    icon: '🌱',
+    description: '潮湿松软的土地，适合农场生长作物。',
+    color: '#6B8E23',
+  },
+  forest_land: {
+    id: 'forest_land',
+    name: '森林地块',
+    category: CardCategory.Resource,
+    tier: 1,
+    stackable: false,
+    maxStack: 1,
+    sellValue: 4,
+    icon: '🌲',
+    description: '被密林覆盖的地块，适合建立伐木营地。',
+    color: '#2E7D32',
+  },
+  rocky_land: {
+    id: 'rocky_land',
+    name: '岩石地块',
+    category: CardCategory.Resource,
+    tier: 1,
+    stackable: false,
+    maxStack: 1,
+    sellValue: 4,
+    icon: '🪨',
+    description: '裸露岩层遍布的地块，适合建立采石场。',
+    color: '#6F7378',
+  },
   tree: {
     id: 'tree',
     name: '树木',
@@ -513,6 +609,56 @@ export const CARD_DEFS: Record<string, CardDef> = {
     stackable: false, maxStack: 1, sellValue: 15, icon: '🏪',
     description: '可以高价出售物品。', color: '#B8860B',
   },
+  memory_fragment: {
+    id: 'memory_fragment', name: '记忆碎片', category: CardCategory.Special, tier: 1,
+    stackable: false, maxStack: 1, sellValue: 1, icon: '🧩',
+    description: '雾中回响的一片记忆，似乎在指向某块石碑。', color: '#7E6AAE',
+  },
+  stone_tablet: {
+    id: 'stone_tablet', name: '石碑', category: CardCategory.Special, tier: 1,
+    stackable: false, maxStack: 1, sellValue: 4, icon: '🪧',
+    description: '刻满旧文字的石碑，记录着太阳、月亮与星图。', color: '#6F7378',
+  },
+  sun_card: {
+    id: 'sun_card', name: '太阳牌', category: CardCategory.Special, tier: 2,
+    stackable: false, maxStack: 1, sellValue: 8, icon: '☀️',
+    description: '温热的金色卡牌，能驱散一小片沉默之雾。', color: '#F2B134',
+  },
+  moon_card: {
+    id: 'moon_card', name: '月亮牌', category: CardCategory.Special, tier: 2,
+    stackable: false, maxStack: 1, sellValue: 8, icon: '🌙',
+    description: '泛着银光的卡牌，记录夜里才会显现的路线。', color: '#7B8FB8',
+  },
+  star_chart: {
+    id: 'star_chart', name: '星图', category: CardCategory.Special, tier: 3,
+    stackable: false, maxStack: 1, sellValue: 12, icon: '🌌',
+    description: '由月光和石碑译出的星图，标出了黎明的位置。', color: '#3D4D8A',
+  },
+  dawn_card: {
+    id: 'dawn_card', name: '黎明牌', category: CardCategory.Special, tier: 4,
+    stackable: false, maxStack: 1, sellValue: 30, icon: '🌅',
+    description: '沉默之雾的终点。持有它，营地将迎来真正的黎明。', color: '#F28C38',
+  },
+  event_question: {
+    id: 'event_question', name: '未知事件', category: CardCategory.Special, tier: 0,
+    stackable: false, maxStack: 1, sellValue: 0, icon: '❓',
+    description: '雾中出现的岔路或传闻，需要做出选择。', color: '#6C5B7B',
+  },
+  old_sage: {
+    id: 'old_sage', name: '年迈贤者', category: CardCategory.Special, tier: 2,
+    stackable: false, maxStack: 1, sellValue: 0, icon: '🧙',
+    description: '知道旧日星象的人，愿意用故事换取答案。', color: '#8E7CC3',
+  },
+  travelling_merchant: {
+    id: 'travelling_merchant', name: '旅行商人', category: CardCategory.Special, tier: 1,
+    stackable: false, maxStack: 1, sellValue: 0, icon: '🧳',
+    description: '穿过迷雾而来的商人，背包里总有奇怪的东西。', color: '#B8860B',
+  },
+  exploration_party: {
+    id: 'exploration_party', name: '探索小队', category: CardCategory.Special, tier: 2,
+    stackable: false, maxStack: 1, sellValue: 10, icon: '🧭',
+    description: '带足口粮出发的小队，可以深入森林寻找太阳牌。', color: '#2F6F73',
+  },
 
   // === 新建筑 ===
   well: {
@@ -572,6 +718,11 @@ export const CARD_DEFS: Record<string, CardDef> = {
     id: 'idea_iron_sword', name: '灵感：铁剑', category: CardCategory.Idea, tier: 2,
     stackable: false, maxStack: 1, sellValue: 4, icon: '💡',
     description: '教会如何锻造铁剑。', color: '#FFFF00',
+  },
+  idea_storage: {
+    id: 'idea_storage', name: '灵感：储物棚', category: CardCategory.Idea, tier: 1,
+    stackable: false, maxStack: 1, sellValue: 3, icon: '💡',
+    description: '教会如何扩展营地储物空间。', color: '#FFFF00',
   },
 
   // === Ideas ===

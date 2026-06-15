@@ -79,6 +79,12 @@ export interface SerializedActiveRecipe {
   spawnY: number;
 }
 
+export type GameStatus = 'playing' | 'victory' | 'defeat';
+
+export type SerializedProductionTimers = Record<string, number>;
+
+export type SerializedBattleCooldowns = Record<string, number>;
+
 export interface SerializedGameState {
   cards: CardInstance[];
   month: number;
@@ -91,6 +97,13 @@ export interface SerializedGameState {
   version: string;
   recipesData?: SerializedActiveRecipe[];
   stackGroups?: Record<string, string[]>;
+  unlockedTechs?: string[];
+  storyFlags?: string[];
+  storyCards?: string[];
+  productionTimers?: SerializedProductionTimers;
+  battleCooldowns?: SerializedBattleCooldowns;
+  gameStatus?: GameStatus;
+  lastStoryDialogId?: string;
 }
 
 export interface GameSettings {

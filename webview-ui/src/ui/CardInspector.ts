@@ -4,6 +4,20 @@
  */
 import type { CardInstance } from '../../../src/protocol/messages';
 import { getCardDef } from '../data/cards';
+import { RECIPES, type Recipe } from '../data/recipes';
+
+function formatDefName(defId: string): string {
+  return getCardDef(defId)?.name ?? defId;
+}
+
+function formatRecipe(recipe: Recipe): string {
+  const inputs = recipe.inputs
+    .map((input) => formatDefName(input.defId) + (input.count > 1 ? ' x' + input.count : ''))
+    .join(' + ');
+  const output = formatDefName(recipe.output.defId) +
+    (recipe.output.count > 1 ? ' x' + recipe.output.count : '');
+  return inputs + ' -> ' + output;
+}
 
 export class CardInspector {
   private el: HTMLDivElement;
@@ -16,9 +30,9 @@ export class CardInspector {
 
     // Close button
     this.closeBtn = document.createElement('button');
-    this.closeBtn.textContent = '✕ 关闭';
-    this.closeBtn.style.cssText =
-      'position:absolute;top:8px;right:12px;background:none;border:1px solid var(--vscode-panel-border,#555);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--vscode-editor-foreground,#ccc);cursor:pointer;';
+    this.closeBtn.className = 'inspector-close';
+    this.closeBtn.textContent = 'x';
+    this.closeBtn.title = '关闭';
     this.closeBtn.addEventListener('click', () => {
       this.hide();
     });
@@ -59,9 +73,25 @@ export class CardInspector {
     }
 
     // ---- Icon + Name header ----
-    const header = document.createElement('h3');
-    header.textContent = def.icon + ' ' + def.name;
-    this.contentEl.appendChild(header);
+    const preview = document.createElement('div');
+    preview.className = 'inspector-preview';
+
+    const icon = document.createElement('div');
+    icon.className = 'inspector-icon';
+    icon.textContent = def.icon;
+    preview.appendChild(icon);
+
+    const name = document.createElement('div');
+    name.className = 'inspector-name';
+    name.textContent = def.name;
+    preview.appendChild(name);
+
+    const category = document.createElement('div');
+    category.className = 'inspector-category';
+    category.textContent = def.category;
+    preview.appendChild(category);
+
+    this.contentEl.appendChild(preview);
 
     // ---- Description ----
     const desc = document.createElement('p');
@@ -71,28 +101,23 @@ export class CardInspector {
     this.contentEl.appendChild(desc);
 
     // ---- Basic stats ----
+    const statSection = document.createElement('div');
+    statSection.className = 'inspector-stats';
+
+    const effectiveStackCount = effectiveCount ?? card.stackCount;
     const statRows: [string, string][] = [
       ['类别', def.category],
       ['等级', String(def.tier)],
       ['售价', def.sellValue + ' 金币'],
-      ['堆叠', ((effectiveCount ?? card.stackCount) > 1 ? (effectiveCount ?? card.stackCount) + '/' + def.maxStack : '单个')],
+      ['堆叠', (effectiveStackCount > 1 ? effectiveStackCount + '/' + def.maxStack : '单个')],
+      ['状态', card.locked ? '忙碌中' : '可操作'],
+      ['位置', Math.round(card.position.x) + ', ' + Math.round(card.position.y)],
     ];
 
     for (const [label, value] of statRows) {
-      const row = document.createElement('div');
-      row.className = 'inspector-stat';
-
-      const labelEl = document.createElement('span');
-      labelEl.textContent = label;
-      labelEl.style.color = 'var(--vscode-descriptionForeground,#888)';
-
-      const valueEl = document.createElement('span');
-      valueEl.textContent = value;
-
-      row.appendChild(labelEl);
-      row.appendChild(valueEl);
-      this.contentEl.appendChild(row);
+      statSection.appendChild(this.createStatRow(label, value));
     }
+    this.contentEl.appendChild(statSection);
 
     // ---- Villager-specific: hunger bar ----
     if (card.villagerState) {
@@ -109,6 +134,8 @@ export class CardInspector {
       this.renderTimerProgress(card);
     }
 
+    this.renderRecipeHints(card.defId);
+
     // Show the panel
     this.el.classList.add('visible');
   }
@@ -122,12 +149,40 @@ export class CardInspector {
 
   // --- Private helpers ---
 
+  private createStatRow(label: string, value: string): HTMLDivElement {
+    const row = document.createElement('div');
+    row.className = 'inspector-stat';
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'stat-label';
+    labelEl.textContent = label;
+
+    const valueEl = document.createElement('span');
+    valueEl.className = 'stat-value';
+    valueEl.textContent = value;
+
+    row.appendChild(labelEl);
+    row.appendChild(valueEl);
+    return row;
+  }
+
+  private createSection(titleText: string): HTMLDivElement {
+    const section = document.createElement('div');
+    section.className = 'inspector-section';
+
+    const title = document.createElement('h4');
+    title.textContent = titleText;
+    section.appendChild(title);
+
+    return section;
+  }
+
   private renderHungerBar(card: CardInstance): void {
     const vs = card.villagerState!;
     const pct = Math.max(0, Math.min(100, (vs.hunger / vs.maxHunger) * 100));
 
-    const section = document.createElement('div');
-    section.style.cssText = 'margin-top:12px;';
+    const section = this.createSection('当前属性');
+    section.classList.add('inspector-progress');
 
     const label = document.createElement('div');
     label.textContent = '饥饿度';
@@ -178,8 +233,8 @@ export class CardInspector {
     const es = card.enemyState!;
     const pct = Math.max(0, Math.min(100, (es.health / es.maxHealth) * 100));
 
-    const section = document.createElement('div');
-    section.style.cssText = 'margin-top:12px;';
+    const section = this.createSection('战斗属性');
+    section.classList.add('inspector-progress');
 
     const label = document.createElement('div');
     label.textContent = '生命值';
@@ -225,8 +280,8 @@ export class CardInspector {
       ? Math.max(0, Math.min(100, ((t.duration - t.remaining) / t.duration) * 100))
       : 100;
 
-    const section = document.createElement('div');
-    section.style.cssText = 'margin-top:12px;';
+    const section = this.createSection('当前进度');
+    section.classList.add('inspector-progress');
 
     const label = document.createElement('div');
     label.textContent = t.label || '进度';
@@ -260,6 +315,50 @@ export class CardInspector {
         'font-size:11px;margin-top:4px;color:var(--vscode-descriptionForeground,#888);';
       this.contentEl.appendChild(prod);
     }
+  }
+
+  private renderRecipeHints(defId: string): void {
+    const asInput = RECIPES.filter((recipe) =>
+      recipe.inputs.some((input) => input.defId === defId)
+    ).slice(0, 4);
+    const asOutput = RECIPES.filter((recipe) => recipe.output.defId === defId).slice(0, 3);
+    const asStation = RECIPES.filter((recipe) => recipe.station === defId).slice(0, 3);
+
+    if (asInput.length === 0 && asOutput.length === 0 && asStation.length === 0) {
+      return;
+    }
+
+    const section = this.createSection('配方参与');
+
+    if (asInput.length > 0) {
+      this.appendRecipeList(section, '可作为材料', asInput);
+    }
+    if (asOutput.length > 0) {
+      this.appendRecipeList(section, '可被制作', asOutput);
+    }
+    if (asStation.length > 0) {
+      this.appendRecipeList(section, '可作为设施', asStation);
+    }
+
+    this.contentEl.appendChild(section);
+  }
+
+  private appendRecipeList(section: HTMLElement, labelText: string, recipes: Recipe[]): void {
+    const label = document.createElement('div');
+    label.className = 'recipe-hint-label';
+    label.textContent = labelText;
+    section.appendChild(label);
+
+    const list = document.createElement('ul');
+    list.className = 'recipe-hint-list';
+
+    for (const recipe of recipes) {
+      const item = document.createElement('li');
+      item.textContent = formatRecipe(recipe);
+      list.appendChild(item);
+    }
+
+    section.appendChild(list);
   }
 
   get element(): HTMLDivElement {

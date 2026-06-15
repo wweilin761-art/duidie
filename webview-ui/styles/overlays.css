@@ -32,7 +32,7 @@
   height: 22px;
   padding: 0 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--vscode-button-secondaryForeground, #ccc);
   font-size: 11px;
@@ -42,6 +42,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+#toolbar .toolbar-icon-button {
+  width: 24px;
+  padding: 0;
+  font-weight: 700;
 }
 
 #toolbar button:hover {
@@ -149,8 +155,8 @@
   position: absolute;
   top: var(--toolbar-height);
   right: 0;
+  bottom: var(--resource-bar-height, 36px);
   width: var(--inspector-width);
-  height: calc(100% - var(--toolbar-height));
   background: var(--vscode-editorWidget-background, #252525);
   border-left: 1px solid var(--vscode-panel-border, #555);
   padding: 0;
@@ -301,6 +307,124 @@
   color: var(--vscode-descriptionForeground, #888);
   display: flex;
   justify-content: space-between;
+}
+
+#card-inspector .inspector-section {
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+#card-inspector .inspector-section h4 {
+  margin-bottom: 7px;
+  font-size: 11px;
+  color: var(--vscode-editor-foreground, #ddd);
+}
+
+#card-inspector .recipe-hint-label {
+  margin: 6px 0 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--vscode-descriptionForeground, #999);
+}
+
+#card-inspector .recipe-hint-list {
+  margin: 0;
+  padding-left: 14px;
+  color: var(--vscode-descriptionForeground, #aaa);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+#card-inspector .recipe-hint-list li {
+  margin-bottom: 3px;
+}
+
+/* ============================================================
+   Resource Bar — compact bottom status shelf
+   ============================================================ */
+#resource-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: var(--resource-bar-height, 36px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.2)),
+    rgba(28, 24, 20, 0.96);
+  border-top: 1px solid rgba(216, 195, 153, 0.2);
+  z-index: 60;
+}
+
+.resource-bar-items {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.resource-pill {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border: 1px solid rgba(216, 195, 153, 0.22);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--vscode-editor-foreground, #ddd);
+  font-size: 10px;
+}
+
+.resource-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(216, 195, 153, 0.16);
+  color: #f5d77c;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.resource-label {
+  color: var(--vscode-descriptionForeground, #aaa);
+}
+
+.resource-value {
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-weight: 700;
+}
+
+.resource-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 58px;
+  justify-content: flex-end;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground, #aaa);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4caf50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.55);
+}
+
+#resource-bar.paused .status-dot {
+  background: #f0b90b;
+  box-shadow: 0 0 8px rgba(240, 185, 11, 0.55);
 }
 
 /* ============================================================
@@ -704,4 +828,232 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ============================================================
+   Tech and Tutorial Books
+   ============================================================ */
+.book-panel {
+  position: absolute;
+  top: var(--toolbar-height);
+  left: var(--left-shelf-width, 0);
+  bottom: var(--resource-bar-height, 0);
+  width: min(280px, calc(100% - var(--left-shelf-width, 0px)));
+  padding: 10px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.12), transparent 90px),
+    var(--paper-bg, #d8c399);
+  color: var(--paper-ink, #2b2118);
+  border-right: 2px solid var(--paper-edge, #8d7045);
+  box-shadow: 10px 0 24px rgba(0, 0, 0, 0.35);
+  transform: translateX(calc(-100% - var(--left-shelf-width, 0px)));
+  transition: transform 0.22s ease;
+  z-index: 90;
+  overflow: auto;
+}
+
+.book-panel.visible {
+  transform: translateX(0);
+}
+
+.book-panel::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px dashed rgba(86, 61, 33, 0.24);
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.book-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -2px -2px 8px;
+  padding: 4px 2px 7px;
+  background: linear-gradient(180deg, rgba(216, 195, 153, 0.98), rgba(216, 195, 153, 0.86));
+  border-bottom: 1px solid rgba(86, 61, 33, 0.2);
+}
+
+.book-header h3 {
+  font-size: 14px;
+  color: var(--paper-ink, #2b2118);
+}
+
+.book-close,
+.story-close {
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(86, 61, 33, 0.25);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--paper-ink, #2b2118);
+  cursor: pointer;
+}
+
+.tech-node-list {
+  display: grid;
+  gap: 7px;
+}
+
+.tech-node {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(86, 61, 33, 0.24);
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: rgba(255, 248, 220, 0.45);
+}
+
+.tech-node.locked {
+  filter: grayscale(0.8);
+  opacity: 0.62;
+}
+
+.tech-node.unlocked {
+  border-left-color: #4d8b55;
+  box-shadow: 0 0 12px rgba(77, 139, 85, 0.16);
+}
+
+.tech-node-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(86, 61, 33, 0.12);
+  font-weight: 800;
+}
+
+.tech-node-title,
+.tutorial-entry-title {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tech-node-description,
+.tutorial-entry p {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.tech-node-meta {
+  margin-top: 4px;
+  font-size: 9px;
+  color: rgba(43, 33, 24, 0.7);
+}
+
+.tutorial-section {
+  margin-bottom: 12px;
+}
+
+.tutorial-section h4 {
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.tutorial-entry {
+  padding: 7px 8px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(86, 61, 33, 0.18);
+  border-radius: 6px;
+  background: rgba(255, 248, 220, 0.42);
+}
+
+/* ============================================================
+   Story Dialog
+   ============================================================ */
+#story-dialog {
+  position: absolute;
+  left: var(--left-shelf-width, 0);
+  right: 8px;
+  bottom: calc(var(--resource-bar-height, 36px) + 8px);
+  z-index: 140;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+#story-dialog.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.story-dialog-panel {
+  display: grid;
+  grid-template-columns: 44px 1fr 24px;
+  gap: 9px;
+  align-items: start;
+  max-width: 520px;
+  padding: 10px;
+  border: 2px solid var(--paper-edge, #8d7045);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.04)),
+    var(--paper-bg, #d8c399);
+  color: var(--paper-ink, #2b2118);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
+}
+
+.story-portrait {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: rgba(86, 61, 33, 0.12);
+  border: 1px solid rgba(86, 61, 33, 0.24);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.story-speaker {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.story-text {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 340px) {
+  #toolbar {
+    height: auto;
+    min-height: var(--toolbar-height);
+    padding-bottom: 4px;
+  }
+
+  #game-board,
+  #game-root::before,
+  #game-root::after,
+  .book-panel,
+  #card-inspector,
+  #recipe-book {
+    top: 54px;
+  }
+
+  .resource-label {
+    display: none;
+  }
+
+  .resource-pill {
+    padding: 3px 5px;
+  }
+
+  .story-dialog-panel {
+    grid-template-columns: 34px 1fr 22px;
+  }
 }

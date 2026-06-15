@@ -10,7 +10,13 @@
   --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   --card-lifted-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   --toolbar-height: 34px;
+  --resource-bar-height: 36px;
+  --left-shelf-width: 52px;
+  --map-gutter-width: 24px;
   --inspector-width: 170px;
+  --paper-bg: #d8c399;
+  --paper-edge: #8d7045;
+  --paper-ink: #2b2118;
 }
 
 *, *::before, *::after {
@@ -42,6 +48,48 @@ html, body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+#game-root::before {
+  content: '';
+  position: absolute;
+  top: var(--toolbar-height);
+  left: 0;
+  bottom: var(--resource-bar-height);
+  width: var(--left-shelf-width);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 78%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.06) 0,
+      rgba(255, 255, 255, 0.06) 1px,
+      transparent 1px,
+      transparent 38px
+    ),
+    #2f241b;
+  border-right: 1px solid rgba(216, 195, 153, 0.22);
+  pointer-events: none;
+  z-index: 2;
+}
+
+#game-root::after {
+  content: '';
+  position: absolute;
+  top: var(--toolbar-height);
+  right: 0;
+  bottom: var(--resource-bar-height);
+  width: var(--map-gutter-width);
+  background:
+    linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.28)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(216, 195, 153, 0.14) 0,
+      rgba(216, 195, 153, 0.14) 2px,
+      transparent 2px,
+      transparent 52px
+    );
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* ============================================================

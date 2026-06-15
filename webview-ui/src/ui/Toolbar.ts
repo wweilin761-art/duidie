@@ -3,7 +3,7 @@
  *
  * Layout groups (left to right):
  *   [⏸暂停] | [1x|2x|3x] | <separator> | 月/日 values | 金币 value | <spacer>
- *   [💾保存] [📂加载] [🛒商店] [📖配方]
+ *   [💾保存] [📂加载] [🛒商店] [📖配方] [科技] [指南]
  */
 
 import { SeasonManager, Season } from '../engine/SeasonManager';
@@ -15,6 +15,8 @@ export interface ToolbarCallbacks {
   onLoad: () => void;
   onShop?: () => void;
   onRecipes?: () => void;
+  onTech?: () => void;
+  onTutorial?: () => void;
 }
 
 export class Toolbar {
@@ -31,6 +33,8 @@ export class Toolbar {
   private loadBtn: HTMLButtonElement;
   private shopBtn: HTMLButtonElement;
   private recipeBtn: HTMLButtonElement;
+  private techBtn: HTMLButtonElement;
+  private tutorialBtn: HTMLButtonElement;
   private monthProgressBar: HTMLDivElement;
   private monthProgressFill: HTMLDivElement;
 
@@ -184,6 +188,25 @@ export class Toolbar {
       this.callbacks.onRecipes?.();
     });
     this.el.appendChild(this.recipeBtn);
+
+    // ---- Tech book button ----
+    this.techBtn = document.createElement('button');
+    this.techBtn.textContent = '科技';
+    this.techBtn.title = '打开科技手册';
+    this.techBtn.addEventListener('click', () => {
+      this.callbacks.onTech?.();
+    });
+    this.el.appendChild(this.techBtn);
+
+    // ---- Tutorial button ----
+    this.tutorialBtn = document.createElement('button');
+    this.tutorialBtn.textContent = '?';
+    this.tutorialBtn.title = '打开生存指南';
+    this.tutorialBtn.className = 'toolbar-icon-button';
+    this.tutorialBtn.addEventListener('click', () => {
+      this.callbacks.onTutorial?.();
+    });
+    this.el.appendChild(this.tutorialBtn);
 
     container.appendChild(this.el);
   }

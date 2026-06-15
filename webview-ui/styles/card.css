@@ -16,7 +16,10 @@
   position: absolute;
   width: var(--card-width);
   min-height: var(--card-height);
-  background: var(--vscode-editorWidget-background, #2d2d2d);
+  background:
+    radial-gradient(circle at 25% 18%, rgba(255, 255, 255, 0.08), transparent 32px),
+    linear-gradient(145deg, rgba(216, 195, 153, 0.16), rgba(80, 58, 35, 0.1)),
+    var(--vscode-editorWidget-background, #2d2d2d);
   border: 2px solid rgba(255,255,255,0.15);
   border-radius: var(--card-radius);
   box-shadow: 0 2px 8px rgba(0,0,0,0.5);
@@ -35,6 +38,26 @@
   overflow: hidden;
   user-select: none;
   color: var(--vscode-foreground, #cccccc);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 1px solid rgba(255, 244, 208, 0.11);
+  border-radius: calc(var(--card-radius) - 2px);
+  pointer-events: none;
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent 7px, transparent calc(100% - 7px), rgba(0, 0, 0, 0.22)),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.24), transparent 8px, transparent calc(100% - 8px), rgba(0, 0, 0, 0.2));
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 /* ------- Category-colored backgrounds ------- */
@@ -177,7 +200,13 @@
   position: absolute;
   bottom: 3px;
   right: 4px;
-  font-size: 14px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: rgba(35, 25, 14, 0.88);
+  border: 1px solid rgba(255, 221, 128, 0.6);
+  font-size: 15px;
   font-weight: 700;
   color: #ffffff;
   text-shadow:
@@ -187,6 +216,31 @@
   line-height: 1;
   pointer-events: none;
   z-index: 2;
+}
+
+.card[data-rarity="common"],
+.card.rarity-common {
+  box-shadow: var(--card-shadow);
+}
+
+.card[data-rarity="uncommon"],
+.card.rarity-uncommon {
+  box-shadow: var(--card-shadow), 0 0 12px rgba(78, 201, 120, 0.26);
+}
+
+.card[data-rarity="rare"],
+.card.rarity-rare {
+  box-shadow: var(--card-shadow), 0 0 16px rgba(70, 150, 255, 0.34);
+}
+
+.card[data-rarity="epic"],
+.card.rarity-epic {
+  box-shadow: var(--card-shadow), 0 0 18px rgba(192, 105, 255, 0.38);
+}
+
+.card[data-rarity="legendary"],
+.card.rarity-legendary {
+  box-shadow: var(--card-shadow), 0 0 20px rgba(255, 196, 65, 0.48);
 }
 
 /* ------- Stacked card (Spider Solitaire style) ------- */
@@ -442,6 +496,16 @@
   animation: cardCombine 0.35s ease-out forwards;
 }
 
+.card.combat-shake,
+.combat-shake {
+  animation: combat-shake 0.26s linear 2;
+}
+
+.card.insufficient-resource,
+.insufficient-resource {
+  animation: insufficient-resource-shake 0.34s ease-in-out;
+}
+
 /* ------- Flash overlay for combine ------- */
 .card-combine-flash {
   pointer-events: none;
@@ -598,4 +662,19 @@
   100% {
     left: 100%;
   }
+}
+
+@keyframes combat-shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-3px) rotate(-1.5deg); }
+  50% { transform: translateX(3px) rotate(1.5deg); }
+  75% { transform: translateX(-2px) rotate(-0.8deg); }
+}
+
+@keyframes insufficient-resource-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
 }

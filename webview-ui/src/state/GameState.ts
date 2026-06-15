@@ -6,6 +6,9 @@ import type {
   CardInstance,
   SerializedGameState,
   CardDef,
+  GameStatus,
+  SerializedBattleCooldowns,
+  SerializedProductionTimers,
 } from '../../../src/protocol/messages';
 import { getCardDef } from '../data/cards';
 
@@ -16,6 +19,13 @@ export class GameState {
   elapsedGameTime: number = 0;
   coins: number = 5;
   unlockedRecipes: Set<string> = new Set();
+  unlockedTechs: Set<string> = new Set();
+  storyFlags: Set<string> = new Set();
+  storyCards: Set<string> = new Set();
+  productionTimers: SerializedProductionTimers = {};
+  battleCooldowns: SerializedBattleCooldowns = {};
+  gameStatus: GameStatus = 'playing';
+  lastStoryDialogId?: string;
   speedMultiplier: number = 1;
   paused: boolean = false;
   version: string = '1.1.0';
@@ -193,6 +203,13 @@ export class GameState {
     this.elapsedGameTime = 0;
     this.coins = 5;
     this.unlockedRecipes = new Set();
+    this.unlockedTechs = new Set();
+    this.storyFlags = new Set();
+    this.storyCards = new Set();
+    this.productionTimers = {};
+    this.battleCooldowns = {};
+    this.gameStatus = 'playing';
+    this.lastStoryDialogId = undefined;
     this.speedMultiplier = 1;
     this.paused = false;
     this.harvestBonus = 0;
@@ -209,6 +226,13 @@ export class GameState {
       elapsedGameTime: this.elapsedGameTime,
       coins: this.coins,
       unlockedRecipes: Array.from(this.unlockedRecipes),
+      unlockedTechs: Array.from(this.unlockedTechs),
+      storyFlags: Array.from(this.storyFlags),
+      storyCards: Array.from(this.storyCards),
+      productionTimers: { ...this.productionTimers },
+      battleCooldowns: { ...this.battleCooldowns },
+      gameStatus: this.gameStatus,
+      lastStoryDialogId: this.lastStoryDialogId,
       speedMultiplier: this.speedMultiplier,
       paused: this.paused,
       version: this.version,
@@ -222,7 +246,14 @@ export class GameState {
     this.day = state.day;
     this.elapsedGameTime = state.elapsedGameTime;
     this.coins = state.coins;
-    this.unlockedRecipes = new Set(state.unlockedRecipes);
+    this.unlockedRecipes = new Set(state.unlockedRecipes ?? []);
+    this.unlockedTechs = new Set(state.unlockedTechs ?? []);
+    this.storyFlags = new Set(state.storyFlags ?? []);
+    this.storyCards = new Set(state.storyCards ?? []);
+    this.productionTimers = { ...(state.productionTimers ?? {}) };
+    this.battleCooldowns = { ...(state.battleCooldowns ?? {}) };
+    this.gameStatus = state.gameStatus ?? 'playing';
+    this.lastStoryDialogId = state.lastStoryDialogId;
     this.speedMultiplier = state.speedMultiplier;
     this.paused = state.paused;
     this.version = state.version;
