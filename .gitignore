@@ -3,3 +3,4 @@ dist/
 webview-ui/dist/
 *.js.map
 .DS_Store
+.codegraph/
