@@ -129,9 +129,9 @@ function restoreBoard(
   if (state.recipesData) {
     recipeEngine.restoreActiveRecipes(state.recipesData);
   }
-  timeManager.elapsedGameTime = state.elapsedGameTime;
-  timeManager.speedMultiplier = state.speedMultiplier;
-  timeManager.paused = state.paused;
+  timeManager.elapsedGameTime = gameState.elapsedGameTime;
+  timeManager.speedMultiplier = gameState.speedMultiplier;
+  timeManager.paused = gameState.paused;
 
   for (const cardData of gameState.cards) {
     board.addEntity(new CardEntity(cardData));
@@ -365,6 +365,7 @@ function spawnCardBatch(
     const preview = previewCombat({
       attackerDefId: context.attacker.data.defId,
       defenderDefId: context.defender.data.defId,
+      attackerHealth: context.attacker.data.villagerState?.hunger ?? 100,
       defenderHealth: context.defender.data.enemyState?.health ?? 0,
       defenderDamage: context.defender.data.enemyState?.damage,
       weaponDefIds: context.weaponDefIds,
@@ -380,14 +381,12 @@ function spawnCardBatch(
     );
   }
 
-  function applyCombatCooldownAndFallback(
-    context: CombatDropContext,
-    recipeHandled: boolean,
-  ): void {
+  function applyCombatRoundToBoard(context: CombatDropContext): void {
     const result = applyCombatRound({
       attackerUid: context.attacker.uid,
       attackerDefId: context.attacker.data.defId,
       defenderDefId: context.defender.data.defId,
+      attackerHealth: context.attacker.data.villagerState?.hunger ?? 100,
       defenderHealth: context.defender.data.enemyState?.health ?? 0,
       defenderDamage: context.defender.data.enemyState?.damage,
       weaponDefIds: context.weaponDefIds,
@@ -396,7 +395,27 @@ function spawnCardBatch(
     });
 
     gameState.battleCooldowns = result.battleCooldowns;
-    if (recipeHandled) return;
+
+    if (result.retaliationDamage > 0) {
+      const attackerDamage = gameState.applyVillagerDamage(
+        context.attacker.uid,
+        result.retaliationDamage,
+      );
+
+      if (attackerDamage?.died) {
+        delete gameState.battleCooldowns[context.attacker.uid];
+        ParticleEffect.destroy(
+          board.viewportElement,
+          context.attacker.data.position.x + 36,
+          context.attacker.data.position.y + 48,
+        );
+        board.removeEntity(context.attacker.uid);
+        toastRenderer.show('村民在反击中倒下了！', 'error');
+      } else if (attackerDamage) {
+        context.attacker.dirty = true;
+        context.attacker.syncDOM();
+      }
+    }
 
     if (result.defenderWillDie) {
       ParticleEffect.destroy(
@@ -492,6 +511,8 @@ function spawnCardBatch(
           return;
         }
         showCombatPreviewToast(combatContext);
+        applyCombatRoundToBoard(combatContext);
+        return;
       }
 
       if (
@@ -556,10 +577,7 @@ function spawnCardBatch(
       }
 
       // Otherwise try recipe
-      const recipeHandled = executeDropRecipe(draggedEntity, targetEntity);
-      if (combatContext) {
-        applyCombatCooldownAndFallback(combatContext, recipeHandled);
-      }
+      executeDropRecipe(draggedEntity, targetEntity);
     },
     // onSell
     (cardUid: string) => {

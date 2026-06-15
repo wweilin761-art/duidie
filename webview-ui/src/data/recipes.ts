@@ -110,6 +110,40 @@ export const RECIPES: Recipe[] = [
     consumesInputs: true,
   },
   {
+    id: 'research_field_lore',
+    inputs: [
+      { defId: 'research_table', count: 1, consumed: false },
+      { defId: 'berry', count: 2, consumed: true },
+      { defId: 'wood', count: 1, consumed: true },
+    ],
+    output: { defId: 'idea_field_lore', count: 1 },
+    duration: 8,
+    consumesInputs: true,
+  },
+  {
+    id: 'research_war_drums',
+    inputs: [
+      { defId: 'research_table', count: 1, consumed: false },
+      { defId: 'wood', count: 2, consumed: true },
+      { defId: 'leather', count: 1, consumed: true },
+    ],
+    output: { defId: 'idea_war_drums', count: 1 },
+    duration: 8,
+    consumesInputs: true,
+  },
+  {
+    id: 'research_mist_cartography',
+    inputs: [
+      { defId: 'research_table', count: 1, consumed: false },
+      { defId: 'stone_tablet', count: 1, consumed: false },
+      { defId: 'gold', count: 1, consumed: true },
+      { defId: 'wood', count: 1, consumed: true },
+    ],
+    output: { defId: 'idea_mist_cartography', count: 1 },
+    duration: 10,
+    consumesInputs: true,
+  },
+  {
     id: 'build_lumber_camp',
     inputs: [
       { defId: 'wood', count: 2, consumed: true },
@@ -300,7 +334,7 @@ export const RECIPES: Recipe[] = [
     consumesInputs: false,
   },
 
-  // === Combat ===
+  // === Exploration ===
   {
     id: 'build_exploration_party',
     inputs: [
@@ -362,38 +396,6 @@ export const RECIPES: Recipe[] = [
     duration: 12,
     consumesInputs: true,
   },
-  {
-    id: 'fight_goblin',
-    inputs: [
-      { defId: 'villager', count: 1, consumed: false },
-      { defId: 'goblin', count: 1, consumed: true },
-    ],
-    output: { defId: 'villager', count: 1 },
-    duration: 4,
-    consumesInputs: false,
-  },
-  {
-    id: 'fight_goblin_sword',
-    inputs: [
-      { defId: 'villager', count: 1, consumed: false },
-      { defId: 'sword', count: 1, consumed: false },
-      { defId: 'goblin', count: 1, consumed: true },
-    ],
-    output: { defId: 'villager', count: 1 },
-    duration: 2,
-    consumesInputs: false,
-  },
-  {
-    id: 'fight_wolf',
-    inputs: [
-      { defId: 'villager', count: 1, consumed: false },
-      { defId: 'wolf', count: 1, consumed: true },
-    ],
-    output: { defId: 'villager', count: 1 },
-    duration: 6,
-    consumesInputs: false,
-  },
-
   // === 完整食物链 ===
   {
     id: 'cook_fish',
@@ -578,58 +580,6 @@ export const RECIPES: Recipe[] = [
       { defId: 'cow', count: 1, consumed: true },
     ],
     output: { defId: 'raw_meat', count: 3 },
-    duration: 5, consumesInputs: false,
-  },
-
-  // === 高级战斗 ===
-  {
-    id: 'fight_goblin_iron_sword',
-    inputs: [
-      { defId: 'villager', count: 1, consumed: false },
-      { defId: 'iron_sword', count: 1, consumed: false },
-      { defId: 'goblin', count: 1, consumed: true },
-    ],
-    output: { defId: 'villager', count: 1 },
-    duration: 1, consumesInputs: false,
-  },
-  {
-    id: 'fight_wolf_bow',
-    inputs: [
-      { defId: 'villager', count: 1, consumed: false },
-      { defId: 'bow', count: 1, consumed: false },
-      { defId: 'wolf', count: 1, consumed: true },
-    ],
-    output: { defId: 'villager', count: 1 },
-    duration: 3, consumesInputs: false,
-  },
-  {
-    id: 'fight_wolf_spear',
-    inputs: [
-      { defId: 'villager', count: 1, consumed: false },
-      { defId: 'spear', count: 1, consumed: false },
-      { defId: 'wolf', count: 1, consumed: true },
-    ],
-    output: { defId: 'villager', count: 1 },
-    duration: 4, consumesInputs: false,
-  },
-  {
-    id: 'fight_troll_iron_sword',
-    inputs: [
-      { defId: 'villager', count: 1, consumed: false },
-      { defId: 'iron_sword', count: 1, consumed: false },
-      { defId: 'boss_troll', count: 1, consumed: true },
-    ],
-    output: { defId: 'villager', count: 1 },
-    duration: 6, consumesInputs: false,
-  },
-  {
-    id: 'fight_wolf_shield',
-    inputs: [
-      { defId: 'villager', count: 1, consumed: false },
-      { defId: 'shield', count: 1, consumed: false },
-      { defId: 'wolf', count: 1, consumed: true },
-    ],
-    output: { defId: 'villager', count: 1 },
     duration: 5, consumesInputs: false,
   },
 

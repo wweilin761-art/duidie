@@ -1,10 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { CardCategory, type SerializedGameState } from '../../src/protocol/messages';
+import { CARD_DEFS } from '../../webview-ui/src/data/cards';
+import { RECIPES, findMatchingRecipes } from '../../webview-ui/src/data/recipes';
+import { GameState } from '../../webview-ui/src/state/GameState';
 import { summarizeResources } from '../../webview-ui/src/engine/ResourceSystem';
 import { resolveStoryMilestones } from '../../webview-ui/src/engine/StorySystem';
-import { previewCombat } from '../../webview-ui/src/engine/BattleSystem';
+import { applyCombatRound, previewCombat } from '../../webview-ui/src/engine/BattleSystem';
 import { tickProduction } from '../../webview-ui/src/engine/ProductionSystem';
-import { evaluateProgression } from '../../webview-ui/src/engine/ProgressionSystem';
+import { evaluateProgression, evaluateResearch, TECH_NODES } from '../../webview-ui/src/engine/ProgressionSystem';
 
 test('summarizeResources counts food, population, coins, and stack limit bonuses', () => {
   const result = summarizeResources({
@@ -70,6 +74,64 @@ test('battle preview reports damage and death risk', () => {
   assert.equal(preview.attackerRisk, 'low');
 });
 
+test('combat rounds expose attacker damage and GameState can apply lethal retaliation', () => {
+  const state = new GameState();
+  const villager = state.createCard('villager', 0, 0);
+  assert.ok(villager);
+  assert.ok(villager.villagerState);
+  villager.villagerState.hunger = 15;
+
+  const result = applyCombatRound({
+    attackerUid: villager.uid,
+    attackerDefId: 'villager',
+    defenderDefId: 'boss_troll',
+    attackerHealth: villager.villagerState.hunger,
+    defenderHealth: 80,
+    defenderDamage: 20,
+    battleCooldowns: {},
+    cooldownSeconds: 8,
+  });
+
+  assert.equal(result.retaliationDamage, 20);
+  assert.equal(result.attackerHealth, 0);
+  assert.equal(result.attackerWillDie, true);
+  assert.equal(result.battleCooldowns[villager.uid], 8);
+
+  const damageResult = state.applyVillagerDamage(villager.uid, result.retaliationDamage);
+  assert.deepEqual(damageResult, { remainingHealth: 0, died: true });
+  assert.equal(state.findCard(villager.uid), undefined);
+});
+
+test('legacy fight recipes do not match enemy combat or output duplicate villagers', () => {
+  const fightRecipes = RECIPES.filter((recipe) => recipe.id.startsWith('fight_'));
+
+  assert.deepEqual(fightRecipes.map((recipe) => recipe.id), []);
+  assert.equal(
+    findMatchingRecipes(['villager', 'goblin'], [], new Set()).some(
+      (recipe) => recipe.output.defId === 'villager'
+    ),
+    false
+  );
+});
+
+test('advertised tech nodes have reachable research ideas', () => {
+  for (const node of TECH_NODES) {
+    const reachableIdeaId = node.researchCardIds.find((researchId) => {
+      const def = CARD_DEFS[researchId];
+      if (!def || def.category !== CardCategory.Idea) return false;
+
+      return RECIPES.some((recipe) => (
+        recipe.output.defId === researchId &&
+        recipe.inputs.some((input) => input.defId === 'research_table' && !input.consumed)
+      ));
+    });
+
+    assert.ok(reachableIdeaId, `${node.id} has no research_table recipe producing an advertised idea`);
+    const research = evaluateResearch({ cardDefIds: [reachableIdeaId] });
+    assert.ok(research.unlockedTechs.includes(node.id), `${reachableIdeaId} does not unlock ${node.id}`);
+  }
+});
+
 test('production tick emits food only when farm sits on fertile land', () => {
   const result = tickProduction({
     elapsedGameSeconds: 30,
@@ -87,4 +149,38 @@ test('progression evaluates dawn victory and population loss failure', () => {
   assert.equal(evaluateProgression({ cardDefIds: ['dawn_card'], population: 1, hasCamp: true }).status, 'victory');
   assert.equal(evaluateProgression({ cardDefIds: ['camp'], population: 0, hasCamp: true }).status, 'defeat');
   assert.equal(evaluateProgression({ cardDefIds: ['wood'], population: 1, hasCamp: false }).status, 'defeat');
+});
+
+test('game state serializes event hunger modifier and defaults legacy timing fields', () => {
+  const state = new GameState();
+  state.speedMultiplier = 3;
+  state.paused = true;
+  state.eventHungerModifier = 2;
+
+  const serialized = state.toJSON();
+  assert.equal(serialized.speedMultiplier, 3);
+  assert.equal(serialized.paused, true);
+  assert.equal(serialized.eventHungerModifier, 2);
+
+  const legacyState = {
+    cards: [],
+    month: 2,
+    day: 4,
+    elapsedGameTime: 42,
+    coins: 9,
+    unlockedRecipes: [],
+    version: '1.0.0',
+  } as SerializedGameState;
+
+  const restoredLegacy = new GameState();
+  restoredLegacy.fromJSON(legacyState);
+  assert.equal(restoredLegacy.speedMultiplier, 1);
+  assert.equal(restoredLegacy.paused, false);
+  assert.equal(restoredLegacy.eventHungerModifier, 1.0);
+
+  const restoredCurrent = new GameState();
+  restoredCurrent.fromJSON(serialized);
+  assert.equal(restoredCurrent.speedMultiplier, 3);
+  assert.equal(restoredCurrent.paused, true);
+  assert.equal(restoredCurrent.eventHungerModifier, 2);
 });

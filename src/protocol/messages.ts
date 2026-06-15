@@ -92,8 +92,9 @@ export interface SerializedGameState {
   elapsedGameTime: number;
   coins: number;
   unlockedRecipes: string[];
-  speedMultiplier: number;
-  paused: boolean;
+  speedMultiplier?: number;
+  paused?: boolean;
+  eventHungerModifier?: number;
   version: string;
   recipesData?: SerializedActiveRecipe[];
   stackGroups?: Record<string, string[]>;

@@ -195,6 +195,23 @@ export class GameState {
     }
   }
 
+  /** Apply combat damage to a villager, using hunger as the current health pool. */
+  applyVillagerDamage(uid: string, damage: number): { remainingHealth: number; died: boolean } | undefined {
+    const card = this.findCard(uid);
+    if (!card?.villagerState) return undefined;
+
+    const remainingHealth = Math.max(0, card.villagerState.hunger - Math.max(0, damage));
+    card.villagerState.hunger = remainingHealth;
+    card.villagerState.isStarving = remainingHealth < 20;
+
+    const died = remainingHealth <= 0;
+    if (died) {
+      this.removeCard(uid);
+    }
+
+    return { remainingHealth, died };
+  }
+
   /** Reset to fresh game state */
   reset(): void {
     this.cards = [];
@@ -235,6 +252,7 @@ export class GameState {
       lastStoryDialogId: this.lastStoryDialogId,
       speedMultiplier: this.speedMultiplier,
       paused: this.paused,
+      eventHungerModifier: this.eventHungerModifier,
       version: this.version,
     };
   }
@@ -254,8 +272,9 @@ export class GameState {
     this.battleCooldowns = { ...(state.battleCooldowns ?? {}) };
     this.gameStatus = state.gameStatus ?? 'playing';
     this.lastStoryDialogId = state.lastStoryDialogId;
-    this.speedMultiplier = state.speedMultiplier;
-    this.paused = state.paused;
+    this.speedMultiplier = state.speedMultiplier ?? 1;
+    this.paused = state.paused ?? false;
+    this.eventHungerModifier = state.eventHungerModifier ?? 1.0;
     this.version = state.version;
 
     // Restore uid counter to avoid collisions

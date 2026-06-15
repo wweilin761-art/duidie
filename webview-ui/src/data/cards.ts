@@ -724,6 +724,21 @@ export const CARD_DEFS: Record<string, CardDef> = {
     stackable: false, maxStack: 1, sellValue: 3, icon: '💡',
     description: '教会如何扩展营地储物空间。', color: '#FFFF00',
   },
+  idea_field_lore: {
+    id: 'idea_field_lore', name: '灵感：田野知识', category: CardCategory.Idea, tier: 1,
+    stackable: false, maxStack: 1, sellValue: 3, icon: '💡',
+    description: '整理作物、土地和季节的观察，解锁农场知识。', color: '#FFFF00',
+  },
+  idea_war_drums: {
+    id: 'idea_war_drums', name: '灵感：战鼓', category: CardCategory.Idea, tier: 2,
+    stackable: false, maxStack: 1, sellValue: 4, icon: '💡',
+    description: '记录巡逻节奏和战斗号令，解锁战斗训练。', color: '#FFFF00',
+  },
+  idea_mist_cartography: {
+    id: 'idea_mist_cartography', name: '灵感：迷雾制图', category: CardCategory.Idea, tier: 2,
+    stackable: false, maxStack: 1, sellValue: 5, icon: '💡',
+    description: '把石碑线索绘成路线图，解锁深入迷雾的探索。', color: '#FFFF00',
+  },
 
   // === Ideas ===
   idea_plank: {
