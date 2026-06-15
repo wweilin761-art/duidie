@@ -22,6 +22,21 @@ const EVENT_CHANCE = 0.65;
 /** Spawn margin from board edges (in board pixels) */
 const SPAWN_MARGIN = 60;
 
+/** Cards that can investigate event question cards. */
+const EVENT_ACTOR_DEF_IDS = new Set([
+  'villager',
+  'builder',
+  'farmer',
+  'hunter',
+  'warrior',
+]);
+
+/** Event templates that should leave an NPC on the board. */
+const EVENT_NPC_DEF_IDS: Partial<Record<string, string>> = {
+  wandering_trader: 'travelling_merchant',
+  merchant_caravan: 'travelling_merchant',
+};
+
 export class EventManager {
   private gameState: GameState;
   private board: Board;
@@ -68,32 +83,7 @@ export class EventManager {
     const event = pickRandomEvent(month, this.recentEventIds);
     if (!event) return;
 
-    // Mark event as triggered
-    this.eventTriggeredThisMonth = true;
-
-    // Track to avoid repeats
-    this.recentEventIds.push(event.id);
-    if (this.recentEventIds.length > RECENT_EVENT_MEMORY) {
-      this.recentEventIds.shift();
-    }
-
-    // Spawn cards from the event template
-    if (event.spawnCards && event.spawnCards.length > 0) {
-      this.spawnEventCards(event);
-    }
-
-    // Add shop packs from the event
-    if (event.shopPacks && event.shopPacks.length > 0) {
-      this.activeEventShopPacks = [...event.shopPacks];
-    }
-
-    // Apply special effect
-    if (event.specialEffect) {
-      this.applySpecialEffect(event);
-    }
-
-    // Show toast message
-    this.onToast(`${event.name}: ${event.description}`);
+    this.triggerEvent(event);
   }
 
   // ========================================================================
@@ -182,56 +172,24 @@ export class EventManager {
    * Enemy cards get a slide-in animation from the board edge.
    * Non-enemy cards get a particle burst spawn effect.
    */
-  private spawnEventCards(event: EventTemplate): void {
+  private spawnEventCards(
+    event: EventTemplate,
+    origin?: { x: number; y: number }
+  ): void {
     // Determine spawn bounds based on board viewport size
     const boardW = this.board.boardWidth || 1200;
     const boardH = this.board.boardHeight || 800;
-    const isEnemy = EventManager.ENEMY_DEF_IDS.has(event.spawnCards![0]?.defId ?? '');
 
     for (const spawn of event.spawnCards!) {
       for (let i = 0; i < spawn.count; i++) {
-        // Generate a random position within board bounds (with margin)
-        const x = SPAWN_MARGIN + Math.random() * (boardW - SPAWN_MARGIN * 2);
-        const y = SPAWN_MARGIN + Math.random() * (boardH - SPAWN_MARGIN * 2);
+        const isEnemy = EventManager.ENEMY_DEF_IDS.has(spawn.defId);
+        const { x, y } = origin
+          ? this.getNearbySpawnPosition(origin, i)
+          : this.getRandomBoardPosition(boardW, boardH);
 
         const cardInstance = this.gameState.createCard(spawn.defId, x, y);
         if (cardInstance) {
-          const entity = new CardEntity(cardInstance);
-
-          if (isEnemy) {
-            // Enemy: start off-screen (left side) and slide in
-            entity.el.classList.add('enemy-spawn');
-            // Store final position as CSS custom properties for the animation
-            entity.el.style.setProperty('--final-x', `${x}px`);
-            entity.el.style.setProperty('--final-y', `${y}px`);
-            // Start off-screen to the left
-            entity.el.style.left = '-150px';
-            entity.el.style.top = `${y}px`;
-
-            this.board.addEntity(entity);
-
-            // After animation, set final position and clean up
-            const animDuration = 500; // matches CSS enemy-spawn animation
-            setTimeout(() => {
-              entity.el.classList.remove('enemy-spawn');
-              entity.el.style.removeProperty('--final-x');
-              entity.el.style.removeProperty('--final-y');
-              entity.data.position.x = x;
-              entity.data.position.y = y;
-              entity.el.style.left = `${x}px`;
-              entity.el.style.top = `${y}px`;
-              entity.dirty = true;
-            }, animDuration);
-          } else {
-            // Non-enemy: particle burst spawn effect
-            entity.playEnterAnimation();
-            this.board.addEntity(entity);
-            ParticleEffect.spawn(
-              this.board.viewportElement,
-              x + 36,
-              y + 48,
-            );
-          }
+          this.addSpawnedEntity(cardInstance, isEnemy);
         }
       }
     }
@@ -249,11 +207,206 @@ export class EventManager {
   }
 
   /**
+   * Spawn an unresolved event card at one edge of the visible map.
+   * Returns false if one is already waiting.
+   */
+  spawnQuestionCard(): boolean {
+    const existing = this.gameState.cards.some(
+      (card) => card.defId === 'event_question'
+    );
+    if (existing) return false;
+
+    const { x, y } = this.getEdgeSpawnPosition();
+    const card = this.gameState.createCard('event_question', x, y);
+    if (!card) return false;
+
+    const entity = new CardEntity(card);
+    entity.el.classList.add('event-question');
+    entity.playEnterAnimation();
+    this.board.addEntity(entity);
+    ParticleEffect.spawn(this.board.viewportElement, x + 36, y + 48);
+    this.onToast('地图边缘出现了未知事件，派村民去看看吧。');
+    return true;
+  }
+
+  /**
+   * Reveal an event question card by dropping an eligible actor on it.
+   * The question card is removed, then a weighted event is resolved.
+   */
+  revealQuestionCard(actorUid: string, questionUid: string): boolean {
+    const actor = this.gameState.findCard(actorUid);
+    const question = this.gameState.findCard(questionUid);
+    if (
+      !actor ||
+      !question ||
+      question.defId !== 'event_question' ||
+      !EVENT_ACTOR_DEF_IDS.has(actor.defId)
+    ) {
+      return false;
+    }
+
+    const event = pickRandomEvent(this.gameState.month, this.recentEventIds);
+    if (!event) {
+      this.onToast('迷雾散开了，但什么也没有发生。');
+      this.gameState.removeCard(questionUid);
+      this.board.removeEntity(questionUid);
+      return true;
+    }
+
+    const origin = { ...question.position };
+    ParticleEffect.combine(
+      this.board.viewportElement,
+      origin.x + 36,
+      origin.y + 48,
+    );
+    this.gameState.removeCard(questionUid);
+    this.board.removeEntity(questionUid);
+    this.triggerEvent(event, origin);
+    return true;
+  }
+
+  /**
    * Reset all event state (e.g., on new game).
    */
   reset(): void {
     this.recentEventIds = [];
     this.activeEventShopPacks = [];
     this.eventTriggeredThisMonth = false;
+  }
+
+  private triggerEvent(
+    event: EventTemplate,
+    origin?: { x: number; y: number }
+  ): void {
+    this.eventTriggeredThisMonth = true;
+    this.rememberEvent(event.id);
+
+    if (event.spawnCards && event.spawnCards.length > 0) {
+      this.spawnEventCards(event, origin);
+    }
+
+    if (event.shopPacks && event.shopPacks.length > 0) {
+      this.activeEventShopPacks = [...event.shopPacks];
+      this.spawnEventNpc(event, origin);
+    }
+
+    if (event.specialEffect) {
+      this.applySpecialEffect(event);
+    }
+
+    this.onToast(`${event.name}: ${event.description}`);
+  }
+
+  private rememberEvent(eventId: string): void {
+    this.recentEventIds.push(eventId);
+    if (this.recentEventIds.length > RECENT_EVENT_MEMORY) {
+      this.recentEventIds.shift();
+    }
+  }
+
+  private spawnEventNpc(
+    event: EventTemplate,
+    origin?: { x: number; y: number }
+  ): void {
+    const defId = EVENT_NPC_DEF_IDS[event.id];
+    if (!defId) return;
+
+    const { x, y } = origin
+      ? this.getNearbySpawnPosition(origin, 0)
+      : this.getEdgeSpawnPosition();
+    const card = this.gameState.createCard(defId, x, y);
+    if (!card) return;
+
+    const entity = new CardEntity(card);
+    entity.playEnterAnimation();
+    this.board.addEntity(entity);
+    ParticleEffect.spawn(this.board.viewportElement, x + 36, y + 48);
+  }
+
+  private addSpawnedEntity(cardInstance: ReturnType<GameState['createCard']>, isEnemy: boolean): void {
+    if (!cardInstance) return;
+
+    const entity = new CardEntity(cardInstance);
+    const { x, y } = cardInstance.position;
+
+    if (isEnemy) {
+      // Enemy: start off-screen (left side) and slide in
+      entity.el.classList.add('enemy-spawn');
+      entity.el.style.setProperty('--final-x', `${x}px`);
+      entity.el.style.setProperty('--final-y', `${y}px`);
+      entity.el.style.left = '-150px';
+      entity.el.style.top = `${y}px`;
+
+      this.board.addEntity(entity);
+
+      const animDuration = 500; // matches CSS enemy-spawn animation
+      setTimeout(() => {
+        entity.el.classList.remove('enemy-spawn');
+        entity.el.style.removeProperty('--final-x');
+        entity.el.style.removeProperty('--final-y');
+        entity.data.position.x = x;
+        entity.data.position.y = y;
+        entity.el.style.left = `${x}px`;
+        entity.el.style.top = `${y}px`;
+        entity.dirty = true;
+      }, animDuration);
+      return;
+    }
+
+    entity.playEnterAnimation();
+    this.board.addEntity(entity);
+    ParticleEffect.spawn(this.board.viewportElement, x + 36, y + 48);
+  }
+
+  private getEdgeSpawnPosition(): { x: number; y: number } {
+    const boardW = this.board.boardWidth || 1200;
+    const boardH = this.board.boardHeight || 800;
+    const minX = SPAWN_MARGIN;
+    const minY = SPAWN_MARGIN;
+    const maxX = Math.max(minX, boardW - SPAWN_MARGIN - 72);
+    const maxY = Math.max(minY, boardH - SPAWN_MARGIN - 96);
+    const edge = Math.floor(Math.random() * 4);
+
+    if (edge === 0) return { x: minX, y: this.randomBetween(minY, maxY) };
+    if (edge === 1) return { x: maxX, y: this.randomBetween(minY, maxY) };
+    if (edge === 2) return { x: this.randomBetween(minX, maxX), y: minY };
+    return { x: this.randomBetween(minX, maxX), y: maxY };
+  }
+
+  private getRandomBoardPosition(boardW: number, boardH: number): { x: number; y: number } {
+    const minX = SPAWN_MARGIN;
+    const minY = SPAWN_MARGIN;
+    const maxX = Math.max(minX, boardW - SPAWN_MARGIN - 72);
+    const maxY = Math.max(minY, boardH - SPAWN_MARGIN - 96);
+    return {
+      x: this.randomBetween(minX, maxX),
+      y: this.randomBetween(minY, maxY),
+    };
+  }
+
+  private getNearbySpawnPosition(
+    origin: { x: number; y: number },
+    index: number
+  ): { x: number; y: number } {
+    const boardW = this.board.boardWidth || 1200;
+    const boardH = this.board.boardHeight || 800;
+    const angle = index * 0.9 + Math.random() * 0.5;
+    const radius = 42 + index * 16;
+    const x = origin.x + Math.cos(angle) * radius;
+    const y = origin.y + Math.sin(angle) * radius;
+
+    return {
+      x: this.clamp(x, SPAWN_MARGIN, Math.max(SPAWN_MARGIN, boardW - SPAWN_MARGIN - 72)),
+      y: this.clamp(y, SPAWN_MARGIN, Math.max(SPAWN_MARGIN, boardH - SPAWN_MARGIN - 96)),
+    };
+  }
+
+  private randomBetween(min: number, max: number): number {
+    if (max <= min) return min;
+    return min + Math.random() * (max - min);
+  }
+
+  private clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
   }
 }

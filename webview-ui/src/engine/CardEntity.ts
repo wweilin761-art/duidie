@@ -258,6 +258,14 @@ export class CardEntity {
     setTimeout(() => this.el.classList.remove('combining'), 350);
   }
 
+  /** Shake the card for combat warnings, such as an active cooldown. */
+  playCombatShake(): void {
+    this.el.classList.remove('combat-shake');
+    void this.el.offsetWidth;
+    this.el.classList.add('combat-shake');
+    setTimeout(() => this.el.classList.remove('combat-shake'), 550);
+  }
+
   /** Clean up the DOM element */
   dispose(): void {
     this.el.remove();

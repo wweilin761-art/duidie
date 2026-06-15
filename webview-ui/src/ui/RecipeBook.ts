@@ -14,6 +14,8 @@
 import { RECIPES, type Recipe } from '../data/recipes';
 import { getCardDef } from '../data/cards';
 
+type CategorizedRecipe = Recipe & { category?: string };
+
 /** Map a station defId to a CSS border-color class. */
 function stationBorderClass(station: string | undefined): string {
   if (!station) return 'station-none';
@@ -30,7 +32,7 @@ function stationBorderClass(station: string | undefined): string {
 function groupRecipesByCategory(recipes: Recipe[]): Map<string, Recipe[]> {
   const groups = new Map<string, Recipe[]>();
   for (const r of recipes) {
-    const cat = r.category || r.station || '一般';
+    const cat = (r as CategorizedRecipe).category || r.station || '一般';
     if (!groups.has(cat)) groups.set(cat, []);
     groups.get(cat)!.push(r);
   }

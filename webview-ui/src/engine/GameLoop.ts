@@ -23,7 +23,12 @@ import { CardInspector } from '../ui/CardInspector';
 import { getCardDef } from '../data/cards';
 import { ParticleEffect } from './ParticleEffect';
 import { SeasonManager, Season } from './SeasonManager';
-import type { CardInstance } from '../../../src/protocol/messages';
+import { tickProduction } from './ProductionSystem';
+import { evaluateProgression, evaluateResearch } from './ProgressionSystem';
+import { resolveStoryMilestones } from './StorySystem';
+import { summarizeResources } from './ResourceSystem';
+import { CardEntity } from './CardEntity';
+import type { CardInstance, GameStatus } from '../../../src/protocol/messages';
 
 /** Wall-clock seconds between autosaves. */
 const AUTOSAVE_INTERVAL = 120;
@@ -31,10 +36,21 @@ const AUTOSAVE_INTERVAL = 120;
 /** Maximum wall-clock delta per frame to avoid spiral-of-death. */
 const MAX_DELTA = 0.1;
 
+/** Game seconds between unresolved event question cards. */
+const EVENT_QUESTION_INTERVAL = 75;
+
+const TECH_TOAST_NAMES: Record<string, string> = {
+  storage_sheds: '储物棚',
+  field_lore: '田野知识',
+  war_drums: '战鼓',
+  mist_cartography: '迷雾制图',
+};
+
 export class GameLoop {
   private running: boolean = false;
   private lastTimestamp: number = 0;
   private autosaveAccumulator: number = 0;
+  private eventQuestionAccumulator: number = 0;
 
   private seasonManager: SeasonManager;
   private currentSeason: Season = Season.Spring;
@@ -51,6 +67,8 @@ export class GameLoop {
     private cardInspector: CardInspector,
     private onAutosave: () => void,
     private onShopReady?: () => void,
+    private onStoryDialogue?: (dialogueId: string) => void,
+    private onGameOver?: (status: GameStatus, reason?: string) => void,
   ) {
     this.seasonManager = new SeasonManager();
     // Compute initial season
@@ -67,6 +85,7 @@ export class GameLoop {
     this.running = true;
     this.lastTimestamp = performance.now();
     this.autosaveAccumulator = 0;
+    this.eventQuestionAccumulator = 0;
     requestAnimationFrame(this.frame);
   }
 
@@ -156,16 +175,23 @@ export class GameLoop {
     // (b) Deplete villager hunger with season + event multiplier
     this.gameState.updateVillagerHunger(deltaGame, hungerMult);
 
-    // (c) Process completed timers — spawn products, consume ingredients
+    // (c) Decrement battle cooldowns and event-card timer
+    this.updateBattleCooldowns(deltaGame);
+    this.updateEventQuestionTimer(deltaGame);
+
+    // (d) Process completed timers — spawn products, consume ingredients
     const completed = this.gameState.getCompletedTimers();
     if (completed.length > 0) {
       this.recipeEngine.processCompletedTimers();
     }
 
-    // (d) Starvation deaths
+    // (e) Production buildings
+    this.processProduction(deltaGame);
+
+    // (f) Starvation deaths
     this.checkStarvation();
 
-    // (e) Month advancement
+    // (g) Month advancement
     if (monthAdvanced) {
       this.gameState.month = newMonth;
       // Reset event hunger modifier on new month (event effects last one month)
@@ -179,6 +205,167 @@ export class GameLoop {
     // (month was already set above when monthAdvanced was true.)
     this.gameState.day = newDay;
     this.gameState.elapsedGameTime = this.timeManager.elapsedGameTime;
+
+    // (h) Research, story, and game-over progression
+    this.evaluateMetaProgression();
+  }
+
+  private updateBattleCooldowns(deltaGame: number): void {
+    const nextCooldowns: Record<string, number> = {};
+
+    for (const [uid, remaining] of Object.entries(this.gameState.battleCooldowns)) {
+      const next = remaining - deltaGame;
+      if (next > 0) {
+        nextCooldowns[uid] = next;
+      }
+    }
+
+    this.gameState.battleCooldowns = nextCooldowns;
+  }
+
+  private updateEventQuestionTimer(deltaGame: number): void {
+    this.eventQuestionAccumulator += deltaGame;
+    if (this.eventQuestionAccumulator < EVENT_QUESTION_INTERVAL) return;
+
+    this.eventQuestionAccumulator = 0;
+    this.eventManager.spawnQuestionCard();
+  }
+
+  private processProduction(deltaGame: number): void {
+    const result = tickProduction({
+      elapsedGameSeconds: deltaGame,
+      cards: this.gameState.cards,
+      productionTimers: this.gameState.productionTimers,
+      unlockedTechs: this.gameState.unlockedTechs,
+    });
+
+    this.gameState.productionTimers = result.productionTimers;
+
+    for (const spawn of result.spawnCards) {
+      const source = this.gameState.findCard(spawn.sourceUid);
+      if (!source) continue;
+
+      for (let i = 0; i < spawn.count; i++) {
+        const card = this.gameState.createCard(
+          spawn.defId,
+          source.position.x + 24 + i * 12,
+          source.position.y + 28 + i * 10,
+        );
+        if (!card) continue;
+
+        const entity = new CardEntity(card);
+        entity.playEnterAnimation();
+        this.board.addEntity(entity);
+        ParticleEffect.spawn(
+          this.board.viewportElement,
+          card.position.x + 36,
+          card.position.y + 48,
+        );
+      }
+    }
+  }
+
+  private evaluateMetaProgression(): void {
+    const cardDefIds = this.gameState.cards.map((card) => card.defId);
+
+    const research = evaluateResearch({
+      cardDefIds,
+      unlockedTechs: this.gameState.unlockedTechs,
+    });
+    if (research.newTechs.length > 0) {
+      this.gameState.unlockedTechs = new Set(research.unlockedTechs);
+      for (const techId of research.newTechs) {
+        this.toastRenderer.show(
+          `科技解锁：${TECH_TOAST_NAMES[techId] ?? techId}`,
+          'success',
+          3500,
+        );
+      }
+    }
+
+    const story = resolveStoryMilestones({
+      storyFlags: this.gameState.storyFlags,
+      storyCards: this.gameState.storyCards,
+      cardDefIds,
+      coins: this.gameState.coins,
+      lastStoryDialogId: this.gameState.lastStoryDialogId,
+    });
+
+    this.gameState.storyFlags = new Set(story.flags);
+    this.gameState.storyCards = new Set(story.storyCards);
+    this.gameState.lastStoryDialogId = story.lastStoryDialogId;
+    this.spawnStoryCards(story.newCards);
+
+    for (const dialogue of story.dialogue) {
+      this.onStoryDialogue?.(dialogue.id);
+    }
+
+    const refreshedDefIds = this.gameState.cards.map((card) => card.defId);
+    const resources = summarizeResources({
+      cards: this.gameState.cards,
+      coins: this.gameState.coins,
+      unlockedTechs: this.gameState.unlockedTechs,
+    });
+    const progression = evaluateProgression({
+      cardDefIds: refreshedDefIds,
+      population: resources.population,
+      hasCamp: refreshedDefIds.includes('camp'),
+    });
+
+    this.applyProgressionStatus(progression.status, progression.reason);
+  }
+
+  private spawnStoryCards(defIds: string[]): void {
+    if (defIds.length === 0) return;
+
+    const anchor =
+      this.gameState.cards.find((card) => card.defId === 'camp') ??
+      this.gameState.cards[0];
+    const baseX = anchor?.position.x ?? 260;
+    const baseY = anchor?.position.y ?? 180;
+
+    for (let i = 0; i < defIds.length; i++) {
+      const card = this.gameState.createCard(
+        defIds[i],
+        baseX + 96 + i * 18,
+        baseY + 8 + i * 14,
+      );
+      if (!card) continue;
+
+      const entity = new CardEntity(card);
+      entity.playEnterAnimation();
+      this.board.addEntity(entity);
+      ParticleEffect.spawn(
+        this.board.viewportElement,
+        card.position.x + 36,
+        card.position.y + 48,
+      );
+    }
+  }
+
+  private applyProgressionStatus(status: GameStatus, reason?: string): void {
+    if (status === 'playing') {
+      if (this.gameState.gameStatus === 'playing') {
+        this.gameState.gameStatus = 'playing';
+      }
+      return;
+    }
+
+    const firstTerminalTransition = this.gameState.gameStatus !== status;
+
+    this.gameState.gameStatus = status;
+    this.gameState.paused = true;
+    this.timeManager.paused = true;
+    if (!firstTerminalTransition) return;
+
+    this.onGameOver?.(status, reason);
+
+    if (status === 'victory') {
+      this.toastRenderer.show('胜利！黎明驱散了沉默之雾。', 'success', 6000);
+      this.onStoryDialogue?.('dawn_victory');
+    } else {
+      this.toastRenderer.show('游戏结束：营地没能继续坚持。', 'error', 6000);
+    }
   }
 
   // ---------------------------------------------------------------------------

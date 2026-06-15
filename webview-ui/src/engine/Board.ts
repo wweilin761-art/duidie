@@ -292,6 +292,20 @@ export class Board {
   }
 
   /**
+   * Split a single card out of its current stack group.
+   * Returns true when a stack membership was actually changed.
+   */
+  splitCardFromStack(cardUid: string): boolean {
+    const entity = this.getEntity(cardUid);
+    if (!entity || !entity.stackGroupId) return false;
+
+    this.removeFromStackGroup(cardUid);
+    entity.dirty = true;
+    this.updateSpatialIndex(entity);
+    return true;
+  }
+
+  /**
    * Merge all cards from fromGroupId into toGroupId.
    * fromGroup is dissolved after the merge.
    */
@@ -336,6 +350,7 @@ export class Board {
       entity.data.position.y = baseY + i * STACK_OFFSET_Y;
       entity.el.setAttribute('data-stack-depth', String(i));
       entity.dirty = true;
+      this.updateSpatialIndex(entity);
     }
   }
 

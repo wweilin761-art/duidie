@@ -74,5 +74,7 @@ function hasId(ids: IdCollection | undefined, id: string): boolean {
     return false;
   }
 
-  return Array.isArray(ids) ? ids.includes(id) : ids.has(id);
+  return Array.isArray(ids)
+    ? (ids as readonly string[]).includes(id)
+    : (ids as ReadonlySet<string>).has(id);
 }

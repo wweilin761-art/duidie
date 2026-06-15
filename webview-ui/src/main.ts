@@ -26,9 +26,17 @@ import type { ToolbarCallbacks } from './ui/Toolbar';
 import { CardInspector } from './ui/CardInspector';
 import { ShopModal } from './ui/ShopModal';
 import type { ShopModalCallbacks } from './ui/ShopModal';
-import { ToastRenderer, ToastType } from './ui/ToastRenderer';
+import { ToastRenderer } from './ui/ToastRenderer';
 import { RecipeBook } from './ui/RecipeBook';
-import { getStarterCards, getCardDef } from './data/cards';
+import { getCardDef } from './data/cards';
+import { ResourceBar } from './ui/ResourceBar';
+import { TechBook } from './ui/TechBook';
+import { TutorialBook } from './ui/TutorialBook';
+import { StoryDialog } from './ui/StoryDialog';
+import { summarizeResources } from './engine/ResourceSystem';
+import { previewCombat, applyCombatRound } from './engine/BattleSystem';
+import { getStoryDialogue } from './data/story';
+import { TECH_NODES as DATA_TECH_NODES } from './data/technology';
 import type { SerializedGameState } from '../../src/protocol/messages';
 import type { ShopPack } from './data/shop';
 
@@ -36,22 +44,68 @@ import type { ShopPack } from './data/shop';
 // Helpers
 // ---------------------------------------------------------------------------
 
+const STARTER_CARD_IDS = [
+  'camp',
+  'villager',
+  'villager',
+  'wood',
+  'stone',
+  'berry',
+  'tree',
+  'rock',
+  'berry_bush',
+  'fertile_land',
+  'forest_land',
+  'rocky_land',
+];
+
+const COMBAT_ATTACKER_DEF_IDS = new Set([
+  'villager',
+  'builder',
+  'farmer',
+  'hunter',
+  'warrior',
+]);
+
+const COMBAT_TOOL_DEF_IDS = new Set([
+  'sword',
+  'iron_sword',
+  'bow',
+  'spear',
+  'shield',
+  'axe',
+  'pickaxe',
+  'torch',
+  'leather_armor',
+]);
+
+const COMBAT_TOOL_RADIUS = 90;
+const COMBAT_COOLDOWN_SECONDS = 8;
+
+interface CombatDropContext {
+  attacker: CardEntity;
+  defender: CardEntity;
+  weaponDefIds: string[];
+}
+
 function arrangeStarterCards(
   defIds: string[],
   gameState: GameState,
   board: Board,
 ): void {
   const positions = [
-    { x: 20, y: 10 },    // 👤 村民 — 左上最显眼位置
-    { x: 110, y: 10 },   // 🐱 猫
-    { x: 200, y: 10 },   // 🪴 浆果丛
-    { x: 20, y: 130 },   // 🌳 树木
-    { x: 110, y: 130 },  // 🪨 岩石
-    { x: 200, y: 130 },  // 🪵 木材1
-    { x: 20, y: 250 },   // 🪵 木材2
-    { x: 110, y: 250 },  // 🪨 石头
-    { x: 200, y: 250 },  // 🫐 浆果1
-    { x: 20, y: 370 },   // 🫐 浆果2
+    { x: 18, y: 12 },
+    { x: 106, y: 12 },
+    { x: 194, y: 12 },
+    { x: 18, y: 126 },
+    { x: 106, y: 126 },
+    { x: 194, y: 126 },
+    { x: 18, y: 240 },
+    { x: 106, y: 240 },
+    { x: 194, y: 240 },
+    { x: 18, y: 354 },
+    { x: 106, y: 354 },
+    { x: 194, y: 354 },
   ];
 
   for (let i = 0; i < Math.min(defIds.length, positions.length); i++) {
@@ -131,6 +185,7 @@ function spawnCardBatch(
 
   // ---- UI (must exist before engines that use them) ----
   const toastRenderer = new ToastRenderer(root);
+  const resourceBar = new ResourceBar(root);
 
   // ---- Logic engines ----
   const recipeEngine = new RecipeEngine(gameState, board);
@@ -140,18 +195,24 @@ function spawnCardBatch(
   // ---- Toolbar ----
   const toolbarCallbacks: ToolbarCallbacks = {
     onTogglePause: () => {
+      if (gameState.gameStatus !== 'playing') {
+        gameState.paused = true;
+        timeManager.paused = true;
+        toastRenderer.show('本局已经结束，请重置后开始新的营地。', 'warning');
+        updateResourceBar();
+        return;
+      }
       gameState.paused = !gameState.paused;
       timeManager.paused = gameState.paused;
+      updateResourceBar();
     },
     onSetSpeed: (speed: number) => {
       timeManager.speedMultiplier = speed;
       gameState.speedMultiplier = speed;
+      updateResourceBar();
     },
     onSave: () => {
-      const state = gameState.toJSON();
-      state.recipesData = recipeEngine.getActiveRecipesData();
-      state.stackGroups = board.getStackGroupsData();
-      requestSave(0, state);
+      requestSave(0, buildSaveState());
       toastRenderer.show('游戏已保存。', 'success');
     },
     onLoad: () => {
@@ -168,6 +229,12 @@ function spawnCardBatch(
     onRecipes: () => {
       recipeBook.toggle(gameState.unlockedRecipes);
     },
+    onTech: () => {
+      techBook.toggle(gameState.unlockedTechs);
+    },
+    onTutorial: () => {
+      tutorialBook.toggle();
+    },
   };
   const toolbar = new Toolbar(root, toolbarCallbacks);
 
@@ -176,6 +243,20 @@ function spawnCardBatch(
 
   // ---- Recipe book ----
   const recipeBook = new RecipeBook(root);
+
+  // ---- V0.3 panels ----
+  const techBook = new TechBook(
+    root,
+    DATA_TECH_NODES.map((node, index) => ({
+      id: node.id,
+      name: node.label,
+      description: node.description,
+      tier: index,
+      unlocks: node.unlocks,
+    })),
+  );
+  const tutorialBook = new TutorialBook(root);
+  const storyDialog = new StoryDialog(root);
 
   // ---- Shop modal ----
   const shopCallbacks: ShopModalCallbacks = {
@@ -199,6 +280,167 @@ function spawnCardBatch(
   };
   const shopModal = new ShopModal(root, shopCallbacks);
 
+  function buildSaveState(): SerializedGameState {
+    const state = gameState.toJSON();
+    state.recipesData = recipeEngine.getActiveRecipesData();
+    state.stackGroups = board.getStackGroupsData();
+    return state;
+  }
+
+  function updateResourceBar(): void {
+    const summary = summarizeResources({
+      cards: gameState.cards,
+      coins: gameState.coins,
+      unlockedTechs: gameState.unlockedTechs,
+    });
+
+    resourceBar.update({
+      ...summary,
+      paused: gameState.paused,
+      status: getStatusText(),
+    });
+  }
+
+  function getStatusText(): string {
+    if (gameState.gameStatus === 'victory') return '胜利';
+    if (gameState.gameStatus === 'defeat') return '失败';
+    return gameState.paused ? '已暂停' : '运行中';
+  }
+
+  function showStoryDialogue(dialogueId: string): void {
+    const snippet = getStoryDialogue(dialogueId);
+    if (!snippet) return;
+
+    storyDialog.show({
+      id: snippet.id,
+      speaker: snippet.speaker,
+      text: snippet.text,
+      icon: snippet.icon,
+    });
+  }
+
+  function getCombatDropContext(
+    draggedEntity: CardEntity,
+    targetEntity: CardEntity,
+  ): CombatDropContext | null {
+    if (!targetEntity.data.enemyState) return null;
+    if (!COMBAT_ATTACKER_DEF_IDS.has(draggedEntity.data.defId)) return null;
+
+    return {
+      attacker: draggedEntity,
+      defender: targetEntity,
+      weaponDefIds: getNearbyCombatToolDefIds(draggedEntity, targetEntity),
+    };
+  }
+
+  function getNearbyCombatToolDefIds(
+    attacker: CardEntity,
+    defender: CardEntity,
+  ): string[] {
+    const midX = (attacker.data.position.x + defender.data.position.x) / 2;
+    const midY = (attacker.data.position.y + defender.data.position.y) / 2;
+    const nearbyCards = gameState.getCardsInRadius(midX, midY, COMBAT_TOOL_RADIUS);
+
+    return nearbyCards
+      .filter((card) => {
+        if (card.uid === attacker.uid || card.uid === defender.uid || card.locked) {
+          return false;
+        }
+        return COMBAT_TOOL_DEF_IDS.has(card.defId);
+      })
+      .map((card) => card.defId);
+  }
+
+  function warnCombatCooldown(context: CombatDropContext): void {
+    const remaining = gameState.battleCooldowns[context.attacker.uid] ?? 0;
+    context.attacker.playCombatShake();
+    toastRenderer.show(
+      `还需要 ${Math.ceil(remaining)} 秒才能再次攻击。`,
+      'warning',
+      2200,
+    );
+  }
+
+  function showCombatPreviewToast(context: CombatDropContext): void {
+    const preview = previewCombat({
+      attackerDefId: context.attacker.data.defId,
+      defenderDefId: context.defender.data.defId,
+      defenderHealth: context.defender.data.enemyState?.health ?? 0,
+      defenderDamage: context.defender.data.enemyState?.damage,
+      weaponDefIds: context.weaponDefIds,
+    });
+    const attackerName = getCardDef(context.attacker.data.defId)?.name ?? '村民';
+    const defenderName = getCardDef(context.defender.data.defId)?.name ?? '敌人';
+    const resultText = preview.defenderWillDie ? '可击败' : '将进入战斗';
+
+    toastRenderer.show(
+      `${attackerName}攻击${defenderName}：预计 ${preview.expectedDamage} 伤害，风险${formatCombatRisk(preview.attackerRisk)}，${resultText}。`,
+      preview.attackerRisk === 'fatal' ? 'warning' : 'info',
+      3600,
+    );
+  }
+
+  function applyCombatCooldownAndFallback(
+    context: CombatDropContext,
+    recipeHandled: boolean,
+  ): void {
+    const result = applyCombatRound({
+      attackerUid: context.attacker.uid,
+      attackerDefId: context.attacker.data.defId,
+      defenderDefId: context.defender.data.defId,
+      defenderHealth: context.defender.data.enemyState?.health ?? 0,
+      defenderDamage: context.defender.data.enemyState?.damage,
+      weaponDefIds: context.weaponDefIds,
+      battleCooldowns: gameState.battleCooldowns,
+      cooldownSeconds: COMBAT_COOLDOWN_SECONDS,
+    });
+
+    gameState.battleCooldowns = result.battleCooldowns;
+    if (recipeHandled) return;
+
+    if (result.defenderWillDie) {
+      ParticleEffect.destroy(
+        board.viewportElement,
+        context.defender.data.position.x + 36,
+        context.defender.data.position.y + 48,
+      );
+      gameState.removeCard(context.defender.uid);
+      board.removeEntity(context.defender.uid);
+      toastRenderer.show('敌人被击败了！', 'success');
+      return;
+    }
+
+    if (context.defender.data.enemyState) {
+      context.defender.data.enemyState.health = result.defenderHealth;
+      context.defender.dirty = true;
+      context.defender.syncDOM();
+    }
+
+    toastRenderer.show(
+      `命中敌人，剩余生命 ${result.defenderHealth}。`,
+      result.attackerRisk === 'fatal' ? 'warning' : 'info',
+    );
+  }
+
+  function executeDropRecipe(
+    draggedEntity: CardEntity,
+    targetEntity: CardEntity,
+  ): boolean {
+    const recipe = recipeEngine.execute(draggedEntity, targetEntity);
+    if (!recipe) return false;
+
+    const mx = (draggedEntity.data.position.x + targetEntity.data.position.x) / 2;
+    const my = (draggedEntity.data.position.y + targetEntity.data.position.y) / 2;
+    ParticleEffect.combine(board.viewportElement, mx, my);
+    return true;
+  }
+
+  function formatCombatRisk(risk: 'low' | 'medium' | 'fatal'): string {
+    if (risk === 'fatal') return '致命';
+    if (risk === 'medium') return '中等';
+    return '较低';
+  }
+
   // ---- Game loop ----
   const gameLoop = new GameLoop(
     timeManager,
@@ -211,15 +453,16 @@ function spawnCardBatch(
     toastRenderer,
     cardInspector,
     () => {
-      const state = gameState.toJSON();
-      state.recipesData = recipeEngine.getActiveRecipesData();
-      state.stackGroups = board.getStackGroupsData();
-      autoSave(state);
+      autoSave(buildSaveState());
     },
     // onShopReady — auto-open shop modal when month advances
     () => {
       const packs = shopManager.getAvailablePacks(eventManager.getEventShopPacks());
       shopModal.show(packs, gameState.coins);
+    },
+    showStoryDialogue,
+    () => {
+      updateResourceBar();
     },
   );
 
@@ -236,6 +479,21 @@ function spawnCardBatch(
       const draggedDef = getCardDef(draggedEntity.data.defId);
       const targetDef = getCardDef(targetEntity.data.defId);
 
+      if (eventManager.revealQuestionCard(draggedUid, targetUid)) {
+        updateResourceBar();
+        return;
+      }
+
+      const combatContext = getCombatDropContext(draggedEntity, targetEntity);
+      if (combatContext) {
+        const cooldown = gameState.battleCooldowns[combatContext.attacker.uid] ?? 0;
+        if (cooldown > 0) {
+          warnCombatCooldown(combatContext);
+          return;
+        }
+        showCombatPreviewToast(combatContext);
+      }
+
       if (
         draggedEntity.data.defId === targetEntity.data.defId &&
         draggedDef?.stackable &&
@@ -244,8 +502,7 @@ function spawnCardBatch(
       ) {
         // Check if there's a recipe for this combination (e.g., wood+wood→plank)
         // Recipe takes priority over stack merging
-        const recipe = recipeEngine.execute(draggedEntity, targetEntity);
-        if (recipe) return; // Recipe executed, skip stack merge
+        if (executeDropRecipe(draggedEntity, targetEntity)) return; // Recipe executed, skip stack merge
 
         const maxStack = draggedDef.maxStack;
         const draggedGroupSize = board.getStackGroupSize(draggedUid);
@@ -299,11 +556,9 @@ function spawnCardBatch(
       }
 
       // Otherwise try recipe
-      const recipe = recipeEngine.execute(draggedEntity, targetEntity);
-      if (recipe) {
-        const mx = (draggedEntity.data.position.x + targetEntity.data.position.x) / 2;
-        const my = (draggedEntity.data.position.y + targetEntity.data.position.y) / 2;
-        ParticleEffect.combine(board.viewportElement, mx, my);
+      const recipeHandled = executeDropRecipe(draggedEntity, targetEntity);
+      if (combatContext) {
+        applyCombatCooldownAndFallback(combatContext, recipeHandled);
       }
     },
     // onSell
@@ -349,6 +604,7 @@ function spawnCardBatch(
     },
   );
   dragSystem.attach();
+  const resourceBarTimer = window.setInterval(updateResourceBar, 500);
 
   // ---- Board click → card inspector ----
   board.rootElement.addEventListener('click', (e: MouseEvent) => {
@@ -411,7 +667,9 @@ function spawnCardBatch(
   function startNewGame(): void {
     if (gameStarted) return;
     gameStarted = true;
-    arrangeStarterCards(getStarterCards(), gameState, board);
+    arrangeStarterCards(STARTER_CARD_IDS, gameState, board);
+    showStoryDialogue('starting_camp');
+    updateResourceBar();
     gameLoop.start();
   }
 
@@ -426,6 +684,7 @@ function spawnCardBatch(
           restoreBoard(msg.state, gameState, board, timeManager, recipeEngine);
           gameLoop.start();
           gameStarted = true;
+          updateResourceBar();
           toastRenderer.show('游戏已加载！', 'success');
         }
         break;
@@ -453,6 +712,7 @@ function spawnCardBatch(
         gameStarted = false;
         clearSaves();
         startNewGame();
+        updateResourceBar();
         toastRenderer.show('游戏已重置！', 'info');
         break;
       }
@@ -467,6 +727,7 @@ function spawnCardBatch(
   window.addEventListener('beforeunload', () => {
     gameLoop.stop();
     dragSystem.detach();
+    window.clearInterval(resourceBarTimer);
   });
 
   } catch (e: any) {

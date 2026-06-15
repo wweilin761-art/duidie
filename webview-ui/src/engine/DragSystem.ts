@@ -50,6 +50,9 @@ export class DragSystem {
   /** Whether pointer has moved past the drag threshold */
   private hasExceededThreshold: boolean = false;
 
+  /** Whether this drag should split the selected card from its stack. */
+  private splitStackOnDragStart: boolean = false;
+
   /** Bound event handlers (stored for removal) */
   private boundOnPointerDown: (e: PointerEvent) => void;
   private boundOnPointerMove: (e: PointerEvent) => void;
@@ -122,12 +125,13 @@ export class DragSystem {
     this.draggedEntity = targetEntity;
     this.isDragging = false;
     this.hasExceededThreshold = false;
+    this.splitStackOnDragStart = e.shiftKey && targetEntity.stackGroupId !== null;
 
     // Populate extra dragged entities from stack group (Spider Solitaire drag)
     this.extraDraggedEntities = [];
     this.extraOriginalPositions = [];
 
-    if (targetEntity.stackGroupId) {
+    if (!this.splitStackOnDragStart && targetEntity.stackGroupId) {
       const groupCards = this.board.getStackGroupCards(targetEntity.stackGroupId);
       for (const card of groupCards) {
         if (card.uid !== targetEntity.uid) {
@@ -158,6 +162,13 @@ export class DragSystem {
         return;
       }
       this.hasExceededThreshold = true;
+
+      // Split only after a real drag starts, so Shift-click does not mutate stacks.
+      if (this.splitStackOnDragStart) {
+        this.board.splitCardFromStack(this.draggedEntity.uid);
+        this.extraDraggedEntities = [];
+        this.extraOriginalPositions = [];
+      }
 
       // First time exceeding threshold — begin visual drag state
       this.beginDrag();
@@ -362,6 +373,7 @@ export class DragSystem {
     this.dropTarget = null;
     this.isDragging = false;
     this.hasExceededThreshold = false;
+    this.splitStackOnDragStart = false;
   }
 
   // ========================================================================
